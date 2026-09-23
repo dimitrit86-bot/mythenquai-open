@@ -1,54 +1,23 @@
-<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><title>Smash the Florian · Mythenquai Open</title>
-<style>
-*{box-sizing:border-box}body{margin:0;background:#071b20;color:#f7faec;font-family:system-ui,-apple-system,Segoe UI,sans-serif;overflow-x:hidden}.app{max-width:760px;margin:auto;padding:12px}.top{display:flex;justify-content:space-between;align-items:center;gap:8px}.top a{color:#dfff7e;text-decoration:none;font-weight:800}.title{font-weight:950;letter-spacing:.08em}.sub{font-size:11px;color:#9fb4b8}.score{display:flex;justify-content:center;gap:20px;font-size:38px;font-weight:950;margin:8px 0}.d{color:#69ccff}.f{color:#ff9f68}.select,.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}.btn{border:1px solid #36545c;background:#112b33;color:#fff;border-radius:10px;padding:10px 14px;font-weight:900}.btn.on,.btn.primary{background:#dfff7e;color:#14241f;border-color:#dfff7e}.stage{position:relative;height:min(68vh,650px);min-height:430px;border:1px solid #46645b;border-radius:15px;overflow:hidden;background:#193d37;touch-action:none}.court{position:absolute;left:8%;right:8%;top:5%;bottom:5%;background:#b77e5c;border:3px solid #f7eed6}.court:before{content:"";position:absolute;left:0;right:0;top:50%;height:3px;background:#f7eed6}.court:after{content:"";position:absolute;top:0;bottom:0;left:50%;width:2px;background:#f7eed6}.net{position:absolute;left:8%;right:8%;top:50%;height:5px;background:#f4ecd6;box-shadow:0 2px 5px #0008}.banner{position:absolute;z-index:2;padding:5px 9px;background:#0c2b27;border:1px solid #42685e;border-radius:5px;font-size:10px;font-weight:950;letter-spacing:.13em}.b1{top:1%;left:10%}.b2{top:1%;right:10%}.b3{bottom:1%;left:50%;transform:translateX(-50%)}.p{position:absolute;width:48px;height:58px;border-radius:22px 22px 12px 12px;display:grid;place-items:center;font-weight:1000;border:2px solid #fff9;transform:translateX(-50%);z-index:5}.pd{background:#69ccff;bottom:7%}.pf{background:#ff9f68;top:7%}.boss{animation:pulse .5s infinite alternate}@keyframes pulse{to{filter:drop-shadow(0 0 18px #ff516d);transform:translateX(-50%) scale(1.08)}}.ball{position:absolute;width:16px;height:16px;border-radius:50%;background:#eaff72;box-shadow:0 0 14px #eaff72;transform:translate(-50%,-50%);z-index:7}.fx{position:absolute;inset:0;z-index:10;display:none;place-items:center;text-align:center;font-size:clamp(34px,9vw,74px);font-weight:1000;font-style:italic;text-shadow:0 4px 20px #000}.fx.show{display:grid;animation:fx .75s ease both}@keyframes fx{0%{opacity:0;transform:scale(.2) rotate(-8deg)}55%{opacity:1;transform:scale(1.12) rotate(3deg)}100%{opacity:0;transform:scale(1)}}.status{min-height:42px;padding:9px 0;color:#d2e1dc}.meter{height:8px;min-width:120px;flex:1;background:#2c4349;border-radius:8px;overflow:hidden}.fill{height:100%;width:20%;background:#dfff7e}.small{font-size:11px;color:#9fb4b8}@media(max-width:520px){.stage{height:62vh}.btn{padding:9px 11px}.score{font-size:32px}}
-</style></head><body><div class="app">
-<div class="top"><div><div class="title">SMASH THE FLORIAN</div><div class="sub">MYTHENQUAI OPEN · COURT 05</div></div><a href="./">← Home</a></div>
-<div class="score"><span class="d" id="sd">0</span><span>:</span><span class="f" id="sf">0</span></div>
-<div class="select"><b>Spieler:</b><button class="btn on" id="chooseD">Dimitri</button><button class="btn" id="chooseF">Florian</button><span class="small" id="mode">Du spielst Dimitri.</span></div>
-<div class="stage" id="stage"><div class="court"></div><div class="net"></div><div class="banner b1">MYTHENQUAI OPEN</div><div class="banner b2">MYTHENQUAI OPEN</div><div class="banner b3">MYTHENQUAI OPEN</div><div class="p pf" id="pf">F</div><div class="p pd" id="pd">D</div><div class="ball" id="ball"></div><div class="fx" id="fx"></div></div>
-<div class="status" id="status">Spieler wählen und Match starten.</div>
-<div class="controls"><button class="btn primary" id="start">MATCH STARTEN</button><button class="btn" id="left">◀</button><button class="btn" id="right">▶</button><button class="btn" id="smash">⚡ SMASH</button><div class="meter"><div class="fill" id="fill"></div></div><span class="small" id="power">20%</span></div>
-<div class="small">Handy: Finger auf dem Platz bewegen. PC: Pfeiltasten / A D. Dimitri-Modus: Rückschlag automatisch. Florian-Modus: absichtlich unfair – Dimitri smasht fast jeden Ball.</div>
-</div>
+<!doctype html>
+<html lang="de">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Smash the Florian · lädt…</title>
+<style>html,body{margin:0;height:100%;background:#101e25;color:#f7faec;font-family:system-ui,sans-serif;display:grid;place-items:center}.box{text-align:center;padding:24px}.spin{width:38px;height:38px;border:4px solid #344852;border-top-color:#e0ff87;border-radius:50%;margin:0 auto 16px;animation:r 1s linear infinite}@keyframes r{to{transform:rotate(360deg)}}small{color:#a8bdc4}</style></head>
+<body><div class="box"><div class="spin"></div><b>SMASH THE FLORIAN</b><br><small>Offline-Version wird geladen…</small></div>
 <script>
-(()=>{
-const $=id=>document.getElementById(id),stage=$('stage'),pd=$('pd'),pf=$('pf'),be=$('ball');
-let human='D',running=false,scoreD=0,scoreF=0,d=.5,f=.5,dtarg=.5,ftarg=.5,power=.2,armed=false,ball={x:.5,y:.84,vx:0,vy:0},last=0,raf=0,delay=0,fxBusy=false;
-const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
-function draw(){pd.style.left=(8+d*84)+'%';pf.style.left=(8+f*84)+'%';be.style.left=(8+ball.x*84)+'%';be.style.top=(5+ball.y*90)+'%'}
-function fx(t){if(fxBusy)return;fxBusy=true;$('fx').textContent=t;$('fx').classList.add('show');setTimeout(()=>{$('fx').classList.remove('show');fxBusy=false},760)}
-function meter(){$('fill').style.width=Math.round(power*100)+'%';$('power').textContent=Math.round(power*100)+'%';$('smash').classList.toggle('primary',power>=.999||armed);$('smash').textContent=armed?'⚡ SMASH AKTIV':'⚡ SMASH'}
-function serve(side){ball.x=side==='D'?d:f;ball.y=side==='D'?.84:.16;ball.vx=(Math.random()-.5)*.18;ball.vy=side==='D'?-.62:.62;delay=.35;be.style.display='block'}
-function hit(side,isSmash){
- let target;
- if(side==='D'){target=clamp(1-f+(Math.random()-.5)*.22,.05,.95);if(human==='F')isSmash=true;ball.vy=-(isSmash?1.1:.68);ball.vx=(target-ball.x)*(isSmash?1.2:.76);if(isSmash)fx(scoreD===6?'FINISH HIM!':['KAPOW!','BOOM!','TO THE MOON!','SMASH!'][Math.floor(Math.random()*4)])}
- else{target=clamp(1-d+(Math.random()-.5)*.25,.05,.95);ball.vy=.65;ball.vx=(target-ball.x)*.72}
-}
-function finishPoint(w){
- running=false;be.style.display='none';if(w==='D')scoreD++;else scoreF++;$('sd').textContent=scoreD;$('sf').textContent=scoreF;
- pf.classList.toggle('boss',scoreF>=5);
- if(scoreD>=7||scoreF>=7){let msg=scoreD>=7?(scoreF===0?'FLAWLESS VICTORY':'DIMITRI GEWINNT'):'FLORIAN GEWINNT';$('status').textContent=msg+' · '+scoreD+':'+scoreF;fx(msg);cancelAnimationFrame(raf);return}
- $('status').textContent=(w==='D'?'Punkt Dimitri.':'Punkt Florian.')+(scoreD===6?' FINISH HIM!':'');
- setTimeout(()=>{running=true;serve(w);last=performance.now();raf=requestAnimationFrame(loop)},850)
-}
-function loop(t){
- if(!running)return;let step=Math.min(.025,(t-last)/1000||.016);last=t;
- const sp=1.5;d+=clamp(dtarg-d,-sp*step,sp*step);f+=clamp(ftarg-f,-sp*step,sp*step);
- if(delay>0){delay-=step;draw();raf=requestAnimationFrame(loop);return}
- if(human==='D')ftarg=clamp(ball.x+(Math.random()-.5)*.025,.03,.97);else dtarg=clamp(ball.x+(Math.random()-.5)*.008,.03,.97);
- ball.x+=ball.vx*step;ball.y+=ball.vy*step;if(ball.x<0){ball.x=-ball.x;ball.vx=Math.abs(ball.vx)}if(ball.x>1){ball.x=2-ball.x;ball.vx=-Math.abs(ball.vx)}
- if(ball.vy>0&&ball.y>=.82){let reach=Math.abs(ball.x-d);if(reach<.16){let s=(human==='D'&&armed)||(human==='F'&&Math.random()<.97);hit('D',s);if(human==='D'){if(s){armed=false;power=0}else power=Math.min(1,power+.27);meter()}}else if(ball.y>1.03){finishPoint('F');return}}
- if(ball.vy<0&&ball.y<=.18){let reach=Math.abs(ball.x-f),ok=human==='F'?(reach<.105&&Math.random()<.23):reach<.17;if(ok)hit('F',false);else if(ball.y<-.03){finishPoint('D');return}}
- draw();raf=requestAnimationFrame(loop)
-}
-function choose(x){human=x;$('chooseD').classList.toggle('on',x==='D');$('chooseF').classList.toggle('on',x==='F');$('mode').textContent=x==='D'?'Du spielst Dimitri.':'Du spielst Florian. Dimitri hat PERMA-SMASH.';power=x==='D'?.2:0;armed=false;meter()}
-$('chooseD').onclick=()=>choose('D');$('chooseF').onclick=()=>choose('F');
-$('start').onclick=()=>{cancelAnimationFrame(raf);scoreD=scoreF=0;$('sd').textContent=0;$('sf').textContent=0;d=f=dtarg=ftarg=.5;pf.classList.remove('boss');power=human==='D'?.2:0;armed=false;meter();$('status').textContent=human==='D'?'Match läuft. Zum Ball bewegen!':'Dimitri aktiviert PERMA-SMASH. Viel Glück.';running=true;serve('D');last=performance.now();draw();raf=requestAnimationFrame(loop)};
-function move(v){if(human==='D')dtarg=clamp(dtarg+v,.02,.98);else ftarg=clamp(ftarg+v,.02,.98)}
-$('left').onclick=()=>move(-.12);$('right').onclick=()=>move(.12);$('smash').onclick=()=>{if(!running)return;if(human==='F'){fx('GNADE? ABGELEHNT');return}if(power>=.999){armed=true;meter();fx('SMASH BEREIT')}};
-stage.addEventListener('pointerdown',e=>{let r=stage.getBoundingClientRect(),x=clamp((e.clientX-r.left)/r.width,.02,.98);if(human==='D')dtarg=x;else ftarg=x});
-stage.addEventListener('pointermove',e=>{if(e.buttons||e.pointerType==='touch'){let r=stage.getBoundingClientRect(),x=clamp((e.clientX-r.left)/r.width,.02,.98);if(human==='D')dtarg=x;else ftarg=x}});
-addEventListener('keydown',e=>{let k=e.key.toLowerCase();if(e.key==='ArrowLeft'||k==='a')move(-.08);if(e.key==='ArrowRight'||k==='d')move(.08);if(e.code==='Space'){e.preventDefault();$('smash').click()}});
-choose('D');draw();
+(async()=>{
+ try{
+  const names=['payload1.txt','payload2.txt','payload3.txt','payload4.txt'];
+  const parts=await Promise.all(names.map(n=>fetch(n+'?v=16').then(r=>{if(!r.ok)throw new Error(n+' '+r.status);return r.text()})));
+  const b64=parts.join('').replace(/\s/g,'');
+  const bin=atob(b64);
+  const bytes=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+  if(typeof DecompressionStream==='undefined')throw new Error('Browser unterstützt DecompressionStream nicht');
+  const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+  const html=await new Response(stream).text();
+  document.open();document.write(html);document.close();
+ }catch(e){
+  document.body.innerHTML='<div class="box"><b>Laden fehlgeschlagen</b><p>'+String(e.message||e)+'</p><p><a style="color:#e0ff87" href="./">Zurück zur Startseite</a></p></div>';
+ }
 })();
 </script></body></html>
