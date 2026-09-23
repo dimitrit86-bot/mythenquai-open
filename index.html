@@ -78,7 +78,7 @@
 
 <script>
 const pages=[...document.querySelectorAll('.page')];
-function go(id){if(id==='game'){location.href='game.html?v=2';return}pages.forEach(p=>p.classList.toggle('active',p.id===id));document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));scrollTo(0,0)}
+function go(id){if(id==='game'){location.href='game.html?v=16';return}pages.forEach(p=>p.classList.toggle('active',p.id===id));document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));scrollTo(0,0)}
 document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>go(b.dataset.page));
 
 let human='D',playing=false,sd=0,sf=0,fxLock=false,raf=0;
