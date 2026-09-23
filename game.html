@@ -14,7 +14,10 @@
   for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
   if(typeof DecompressionStream==='undefined')throw new Error('Browser unterstützt DecompressionStream nicht');
   const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
-  const html=await new Response(stream).text();
+  let html=await new Response(stream).text();
+  html=html.replace("else if(type==='return'){$('rallyLabel').textContent='BALLWECHSEL '+data.rally;}","else if(type==='return'){$('rallyLabel').textContent='BALLWECHSEL '+data.rally;updatePower(true);}");
+  html=html.replace("$('smashBtn').addEventListener('click',()=>{playerAction();$('smashBtn').blur();});","$('smashBtn').addEventListener('click',()=>{playerAction();updatePower(true);$('smashBtn').blur();});$('smashBtn').addEventListener('touchend',(e)=>{e.preventDefault();playerAction();updatePower(true);},{passive:false});");
+  html=html.replace("function playerAction(){\n    if(game.florianMode){","function playerAction(){\n    if(game.florianMode){");
   document.open();document.write(html);document.close();
  }catch(e){
   document.body.innerHTML='<div class="box"><b>Laden fehlgeschlagen</b><p>'+String(e.message||e)+'</p><p><a style="color:#e0ff87" href="./">Zurück zur Startseite</a></p></div>';
