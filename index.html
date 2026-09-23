@@ -6,7 +6,13 @@
 <title>Mythenquai Open</title>
 <style>
 :root{--bg:#071b20;--panel:#102a31;--line:#2e4b53;--lime:#dfff7e;--blue:#69ccff;--orange:#ff9f68;--text:#f5f8ee;--muted:#9bb0b5}
-*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:radial-gradient(circle at 50% 0,#12333a,#071b20 55%);color:var(--text)}button,input,select{font:inherit}.wrap{max-width:980px;margin:auto;padding:18px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px}.brand{font-weight:900;letter-spacing:.12em}.sub{font-size:11px;color:var(--lime);letter-spacing:.12em}.nav{display:flex;gap:8px;flex-wrap:wrap}.nav button,.btn{border:1px solid var(--line);background:#122d34;color:var(--text);border-radius:10px;padding:10px 14px;font-weight:800;cursor:pointer}.nav button.active,.btn.primary{background:var(--lime);color:#14241f;border-color:var(--lime)}.page{display:none}.page.active{display:block}.hero{padding:52px 0 28px}.hero h1{font-size:clamp(44px,9vw,86px);line-height:.88;margin:0 0 18px;letter-spacing:-.07em}.hero .a{color:var(--blue)}.hero .b{color:var(--orange)}.hero p{max-width:650px;color:#c7d5d2}.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.card{background:#102a31;border:1px solid var(--line);border-radius:16px;padding:18px}.card h2,.card h3{margin-top:0}.card p{color:#b9c9c7}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.field{display:grid;gap:6px;margin:10px 0}.field label{font-size:12px;color:var(--muted)}input,select{width:100%;padding:11px;border-radius:9px;border:1px solid var(--line);background:#0a2026;color:white}.note{font-size:12px;color:var(--muted)}.pill{display:inline-block;border:1px solid var(--line);border-radius:99px;padding:6px 10px;font-size:12px}.odds{font-size:38px;font-weight:950}.blue{color:var(--blue)}.orange{color:var(--orange)}.table{width:100%;border-collapse:collapse;font-size:13px}.table th,.table td{padding:9px;border-bottom:1px solid var(--line);text-align:left}.courtWrap{position:relative;background:#153b34;border:1px solid #47675c;border-radius:16px;overflow:hidden;aspect-ratio:16/10;min-height:330px}.court{position:absolute;inset:8% 10%;background:#b57a57;border:3px solid #f3ead2;transform:perspective(700px) rotateX(7deg);box-shadow:inset 0 0 0 1px #8d5c42}.court:before,.court:after{content:"";position:absolute;background:#f3ead2}.court:before{left:0;right:0;top:50%;height:3px}.court:after{top:0;bottom:0;left:50%;width:2px}.banner{position:absolute;background:#0c2b27;border:1px solid #40655b;color:#e9f3df;padding:6px 12px;font-weight:900;letter-spacing:.14em;font-size:11px}.ban1{top:2%;left:10%}.ban2{top:2%;right:10%}.ban3{bottom:2%;left:50%;transform:translateX(-50%)}.player{position:absolute;width:52px;height:72px;border-radius:22px 22px 14px 14px;display:grid;place-items:center;font-weight:950;border:2px solid #fff8;transition:left .09s}.p1{bottom:8%;background:var(--blue)}.p2{top:8%;background:var(--orange)}.fx{position:absolute;inset:0;display:none;place-items:center;pointer-events:none;font-size:clamp(34px,7vw,80px);font-weight:1000;font-style:italic;text-align:center;text-shadow:0 4px 20px #000}.fx.show{display:grid;animation:pop .7s ease both}@keyframes pop{0%{transform:scale(.2) rotate(-10deg);opacity:0}55%{transform:scale(1.15) rotate(4deg);opacity:1}100%{transform:scale(1);opacity:0}}.score{text-align:center;font-size:42px;font-weight:950}.boss{animation:pulse .5s infinite alternate}@keyframes pulse{to{filter:drop-shadow(0 0 18px #ff4966);transform:scale(1.08)}}.status{margin:10px 0;color:#d8e6df}.sectionTitle{font-size:28px;margin:26px 0 12px}@media(max-width:700px){.cards,.grid2{grid-template-columns:1fr}.wrap{padding:12px}.hero{padding-top:34px}.courtWrap{aspect-ratio:auto;height:56vh;min-height:410px}.odds{font-size:30px}}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:radial-gradient(circle at 50% 0,#12333a,#071b20 55%);color:var(--text)}button,input,select{font:inherit}.wrap{max-width:980px;margin:auto;padding:18px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px}.brand{font-weight:900;letter-spacing:.12em}.sub{font-size:11px;color:var(--lime);letter-spacing:.12em}.nav{display:flex;gap:8px;flex-wrap:wrap}.nav button,.btn{border:1px solid var(--line);background:#122d34;color:var(--text);border-radius:10px;padding:10px 14px;font-weight:800;cursor:pointer}.nav button.active,.btn.primary{background:var(--lime);color:#14241f;border-color:var(--lime)}.page{display:none}.page.active{display:block}.hero{padding:52px 0 28px}.hero h1{font-size:clamp(44px,9vw,86px);line-height:.88;margin:0 0 18px;letter-spacing:-.07em}.hero .a{color:var(--blue)}.hero .b{color:var(--orange)}.hero p{max-width:650px;color:#c7d5d2}.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.card{background:#102a31;border:1px solid var(--line);border-radius:16px;padding:18px}.card h2,.card h3{margin-top:0}.card p{color:#b9c9c7}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.field{display:grid;gap:6px;margin:10px 0}.field label{font-size:12px;color:var(--muted)}input,select{width:100%;padding:11px;border-radius:9px;border:1px solid var(--line);background:#0a2026;color:white}.note{font-size:12px;color:var(--muted)}.pill{display:inline-block;border:1px solid var(--line);border-radius:99px;padding:6px 10px;font-size:12px}.odds{font-size:38px;font-weight:950}.blue{color:var(--blue)}.orange{color:var(--orange)}.table{width:100%;border-collapse:collapse;font-size:13px}.table th,.table td{padding:9px;border-bottom:1px solid var(--line);text-align:left}.courtWrap{position:relative;background:#153b34;border:1px solid #47675c;border-radius:16px;overflow:hidden;aspect-ratio:16/10;min-height:330px}.court{position:absolute;inset:8% 10%;background:#b57a57;border:3px solid #f3ead2;transform:perspective(700px) rotateX(7deg);box-shadow:inset 0 0 0 1px #8d5c42}.court:before,.court:after{content:"";position:absolute;background:#f3ead2}.court:before{left:0;right:0;top:50%;height:3px}.court:after{top:0;bottom:0;left:50%;width:2px}.banner{position:absolute;background:#0c2b27;border:1px solid #40655b;color:#e9f3df;padding:6px 12px;font-weight:900;letter-spacing:.14em;font-size:11px}.ban1{top:2%;left:10%}.ban2{top:2%;right:10%}.ban3{bottom:2%;left:50%;transform:translateX(-50%)}.player{position:absolute;width:52px;height:72px;border-radius:22px 22px 14px 14px;display:grid;place-items:center;font-weight:950;border:2px solid #fff8;transition:left .09s}.p1{bottom:8%;background:var(--blue)}.p2{top:8%;background:var(--orange)}.fx{position:absolute;inset:0;display:none;place-items:center;pointer-events:none;font-size:clamp(34px,7vw,80px);font-weight:1000;font-style:italic;text-align:center;text-shadow:0 4px 20px #000}.fx.show{display:grid;animation:pop .7s ease both}@keyframes pop{0%{transform:scale(.2) rotate(-10deg);opacity:0}55%{transform:scale(1.15) rotate(4deg);opacity:1}100%{transform:scale(1);opacity:0}}.score{text-align:center;font-size:42px;font-weight:950}.boss{animation:pulse .5s infinite alternate}@keyframes pulse{to{filter:drop-shadow(0 0 18px #ff4966);transform:scale(1.08)}}.status{margin:10px 0;color:#d8e6df}.sectionTitle{font-size:28px;margin:26px 0 12px}
+.tennisBall{position:absolute;width:17px;height:17px;border-radius:50%;background:#eaff73;box-shadow:0 0 12px #eaff73,0 2px 5px #0008;z-index:8;transform:translate(-50%,-50%);display:none}
+.netLine{position:absolute;left:10%;right:10%;top:50%;height:5px;background:#f1ead8cc;box-shadow:0 2px 5px #0008;z-index:5}
+.powerbar{height:9px;background:#263e45;border-radius:9px;overflow:hidden;flex:1;min-width:130px}
+.powerfill{height:100%;width:20%;background:var(--lime);transition:width .15s}
+.player.hit{filter:drop-shadow(0 0 16px #fff7a0);transform:scale(1.08)}
+@media(max-width:700px){.cards,.grid2{grid-template-columns:1fr}.wrap{padding:12px}.hero{padding-top:34px}.courtWrap{aspect-ratio:auto;height:56vh;min-height:410px}.odds{font-size:30px}}
 </style>
 </head>
 <body>
@@ -37,10 +43,10 @@
 <div class="card">
 <div class="row"><b>Spieler:</b><button class="btn primary" id="pickD">Dimitri</button><button class="btn" id="pickF">Florian</button><span class="pill" id="modeTxt">Du spielst Dimitri</span></div>
 <div class="score"><span class="blue" id="sD">0</span> : <span class="orange" id="sF">0</span></div>
-<div class="courtWrap"><div class="court"></div><div class="banner ban1">MYTHENQUAI OPEN</div><div class="banner ban2">MYTHENQUAI OPEN</div><div class="banner ban3">MYTHENQUAI OPEN</div><div class="player p2" id="florian">F</div><div class="player p1" id="dimitri">D</div><div class="fx" id="fx"></div></div>
+<div class="courtWrap" id="courtWrap"><div class="court"></div><div class="netLine"></div><div class="banner ban1">MYTHENQUAI OPEN</div><div class="banner ban2">MYTHENQUAI OPEN</div><div class="banner ban3">MYTHENQUAI OPEN</div><div class="player p2" id="florian">F</div><div class="player p1" id="dimitri">D</div><div class="tennisBall" id="tennisBall"></div><div class="fx" id="fx"></div></div>
 <div class="status" id="gameStatus">Wähle einen Spieler und starte das Match.</div>
-<div class="row"><button class="btn primary" id="startGame">MATCH STARTEN</button><button class="btn" id="moveL">◀</button><button class="btn" id="moveR">▶</button><button class="btn" id="smash">⚡ SMASH</button></div>
-<div class="note">Steuerung: Pfeiltasten oder Buttons. Im Florian-Modus smasht Dimitri praktisch permanent – der Modus ist absichtlich unfair.</div>
+<div class="row"><button class="btn primary" id="startGame">MATCH STARTEN</button><button class="btn" id="moveL">◀</button><button class="btn" id="moveR">▶</button><button class="btn" id="smash">⚡ SMASH</button><div class="powerbar"><div class="powerfill" id="powerFill"></div></div><span class="pill" id="powerTxt">20%</span></div>
+<div class="note">Steuerung: Finger/Maus auf dem Platz, Pfeiltasten oder ◀ ▶. Triff den Ball automatisch, wenn du richtig stehst. Smash bei 100 %. Im Florian-Modus ist Dimitri absichtlich nahezu unschlagbar.</div>
 </div>
 </section>
 
@@ -75,38 +81,136 @@ const pages=[...document.querySelectorAll('.page')];
 function go(id){pages.forEach(p=>p.classList.toggle('active',p.id===id));document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));scrollTo(0,0)}
 document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>go(b.dataset.page));
 
-let human='D',playing=false,sd=0,sf=0,px=.5,fxLock=false;const $=id=>document.getElementById(id);
-function pos(){$('dimitri').style.left=(px*80+7)+'%';$('florian').style.left=((1-px)*72+12)+'%'}
-function effect(text){if(fxLock)return;fxLock=true;$('fx').textContent=text;$('fx').classList.add('show');setTimeout(()=>{$('fx').classList.remove('show');fxLock=false},720)}
-function point(w){
-  w==='D'?sd++:sf++;
-  $('sD').textContent=sd;$('sF').textContent=sf;
-  if(sf>=5&&!$('florian').classList.contains('boss')){$('florian').classList.add('boss');effect('FINAL BOSS FLORIAN')}
-  if(sd===7||sf===7){
-    playing=false;
-    let msg=sd===7?(sf===0?'FLAWLESS VICTORY · DIMITRI':'DIMITRI GEWINNT'):'FLORIAN GEWINNT';
-    effect(msg);$('gameStatus').textContent=msg+' · '+sd+':'+sf;return
-  }
-  $('gameStatus').textContent=(w==='D'?'Punkt Dimitri. ':'Punkt Florian. ')+(sd===6?'FINISH HIM!':'')
+let human='D',playing=false,sd=0,sf=0,fxLock=false,raf=0;
+const $=id=>document.getElementById(id);
+const cw=$('courtWrap'),ballEl=$('tennisBall'),dEl=$('dimitri'),fEl=$('florian');
+let dX=.5,fX=.5,dTarget=.5,fTarget=.5,ball={x:.5,y:.82,vx:0,vy:0},last=0,serveDelay=0,smashCharge=.2,smashArmed=false,lastHitter='D';
+
+function effect(text){
+  if(fxLock)return;
+  fxLock=true;$('fx').textContent=text;$('fx').classList.add('show');
+  setTimeout(()=>{$('fx').classList.remove('show');fxLock=false},720)
 }
-function rally(){
+function updatePower(){
+  let p=Math.round(smashCharge*100);
+  $('powerFill').style.width=p+'%';$('powerTxt').textContent=p+'%';
+  $('smash').classList.toggle('primary',p>=100||smashArmed);
+  $('smash').textContent=smashArmed?'⚡ SMASH AKTIV':'⚡ SMASH'
+}
+function place(){
+  dEl.style.left=(10+dX*80)+'%'; fEl.style.left=(10+fX*80)+'%';
+  ballEl.style.left=(10+ball.x*80)+'%';ballEl.style.top=(8+ball.y*84)+'%'
+}
+function resetBall(server){
+  ball.x=server==='D'?dX:fX; ball.y=server==='D'?.84:.16;
+  ball.vx=(Math.random()-.5)*.18;
+  ball.vy=server==='D'?-.58:.58;
+  lastHitter=server; ballEl.style.display='block'; serveDelay=.35
+}
+function setHumanTargetFromClient(clientX){
   if(!playing)return;
-  let dChance=human==='F'?.94:.57;
-  let d=Math.random()<dChance;
-  if(d){
-    let arr=['KAPOW!','SMASH!','TO THE MOON!','BOOM!'];
-    effect(sd===6?'FINISH HIM!':arr[Math.floor(Math.random()*arr.length)]);
-    point('D')
-  }else point('F');
-  setTimeout(rally,900)
+  const r=cw.getBoundingClientRect(),x=Math.max(0,Math.min(1,(clientX-r.left)/r.width));
+  if(human==='D')dTarget=x;else fTarget=x
 }
-$('pickD').onclick=()=>{human='D';$('pickD').classList.add('primary');$('pickF').classList.remove('primary');$('modeTxt').textContent='Du spielst Dimitri'};
-$('pickF').onclick=()=>{human='F';$('pickF').classList.add('primary');$('pickD').classList.remove('primary');$('modeTxt').textContent='Du spielst Florian · viel Glück 😬'};
-$('startGame').onclick=()=>{sd=sf=0;playing=true;$('florian').classList.remove('boss');$('sD').textContent=0;$('sF').textContent=0;$('gameStatus').textContent=human==='F'?'Dimitri lädt den permanenten Smash…':'Match läuft!';setTimeout(rally,700)};
-function move(v){px=Math.max(.05,Math.min(.95,px+v));pos()}
-$('moveL').onclick=()=>move(-.1);$('moveR').onclick=()=>move(.1);
-$('smash').onclick=()=>{if(playing){effect(human==='D'?'ULTRA SMASH!':'GNADE? ABGELEHNT');if(human==='D'&&Math.random()<.8)point('D')}};
-addEventListener('keydown',e=>{if(e.key==='ArrowLeft')move(-.08);if(e.key==='ArrowRight')move(.08);if(e.code==='Space')$('smash').click()});pos();
+cw.addEventListener('pointerdown',e=>setHumanTargetFromClient(e.clientX));
+cw.addEventListener('pointermove',e=>{if(e.buttons||e.pointerType==='touch')setHumanTargetFromClient(e.clientX)});
+
+function hit(side,smash=false){
+  const el=side==='D'?dEl:fEl;el.classList.add('hit');setTimeout(()=>el.classList.remove('hit'),120);
+  lastHitter=side;
+  let targetX;
+  if(side==='D'){
+    targetX=Math.max(.05,Math.min(.95,1-fX+(Math.random()-.5)*.25));
+    if(human==='F')smash=true; // gag mode: Dimitri basically always smashes.
+    ball.vy=-(smash?1.05:.66);
+    ball.vx=(targetX-ball.x)*(smash?1.15:.74);
+    if(smash){effect(sd===6?'FINISH HIM!':['KAPOW!','SMASH!','TO THE MOON!','BOOM!'][Math.floor(Math.random()*4)])}
+  }else{
+    targetX=Math.max(.05,Math.min(.95,1-dX+(Math.random()-.5)*.28));
+    ball.vy=(smash?.92:.63);ball.vx=(targetX-ball.x)*(smash?.95:.7)
+  }
+}
+function point(w){
+  playing=false;
+  w==='D'?sd++:sf++;$('sD').textContent=sd;$('sF').textContent=sf;ballEl.style.display='none';
+  if(sf>=5)fEl.classList.add('boss');else fEl.classList.remove('boss');
+  if(sd>=7||sf>=7){
+    let msg=sd>=7?(sf===0?'FLAWLESS VICTORY · DIMITRI':'DIMITRI GEWINNT'):'FLORIAN GEWINNT';
+    effect(msg);$('gameStatus').textContent=msg+' · '+sd+':'+sf;cancelAnimationFrame(raf);return
+  }
+  $('gameStatus').textContent=(w==='D'?'Punkt Dimitri. ':'Punkt Florian. ')+(sd===6?'FINISH HIM!':'');
+  setTimeout(()=>{playing=true;resetBall(w);last=performance.now();raf=requestAnimationFrame(loop)},900)
+}
+function loop(t){
+  if(!playing)return;
+  let dt=Math.min(.025,(t-last)/1000||.016);last=t;
+  const speed=1.45;
+  dX+=Math.max(-speed*dt,Math.min(speed*dt,dTarget-dX));
+  fX+=Math.max(-speed*dt,Math.min(speed*dt,fTarget-fX));
+
+  if(serveDelay>0){serveDelay-=dt;place();raf=requestAnimationFrame(loop);return}
+
+  // AI movement.
+  if(human==='D'){
+    fTarget=Math.max(.04,Math.min(.96,ball.x+(Math.random()-.5)*.035));
+  }else{
+    dTarget=Math.max(.04,Math.min(.96,ball.x+(Math.random()-.5)*.012));
+  }
+
+  ball.x+=ball.vx*dt;ball.y+=ball.vy*dt;
+  if(ball.x<0){ball.x=-ball.x;ball.vx=Math.abs(ball.vx)}
+  if(ball.x>1){ball.x=2-ball.x;ball.vx=-Math.abs(ball.vx)}
+
+  // Dimitri contact.
+  if(ball.vy>0 && ball.y>=.82){
+    let reach=Math.abs(ball.x-dX);
+    if(reach<.16){
+      let useSmash=(human==='D'&&smashArmed)||(human==='F'&&Math.random()<.95);
+      hit('D',useSmash);
+      if(human==='D'){
+        if(useSmash){smashArmed=false;smashCharge=0}else smashCharge=Math.min(1,smashCharge+.27);
+        updatePower()
+      }
+    }else if(ball.y>1.02){point('F');return}
+  }
+  // Florian contact.
+  if(ball.vy<0 && ball.y<=.18){
+    let reach=Math.abs(ball.x-fX);
+    let allowed=human==='F'?reach<.11&&Math.random()<.28:reach<.17;
+    if(allowed){
+      hit('F',false);
+    }else if(ball.y<-.02){point('D');return}
+  }
+
+  place();raf=requestAnimationFrame(loop)
+}
+$('pickD').onclick=()=>{
+  human='D';$('pickD').classList.add('primary');$('pickF').classList.remove('primary');
+  $('modeTxt').textContent='Du spielst Dimitri';smashCharge=.2;smashArmed=false;updatePower()
+};
+$('pickF').onclick=()=>{
+  human='F';$('pickF').classList.add('primary');$('pickD').classList.remove('primary');
+  $('modeTxt').textContent='Du spielst Florian · viel Glück 😬';smashCharge=0;smashArmed=false;updatePower()
+};
+$('startGame').onclick=()=>{
+  cancelAnimationFrame(raf);sd=sf=0;$('sD').textContent=0;$('sF').textContent=0;dX=fX=dTarget=fTarget=.5;
+  fEl.classList.remove('boss');smashCharge=human==='D'?.2:0;smashArmed=false;updatePower();
+  $('gameStatus').textContent=human==='F'?'Dimitri aktiviert PERMA-SMASH. Überleben ist optional.':'Match läuft – zum Ball bewegen!';
+  playing=true;resetBall('D');last=performance.now();place();raf=requestAnimationFrame(loop)
+};
+function nudge(v){if(human==='D')dTarget=Math.max(.02,Math.min(.98,dTarget+v));else fTarget=Math.max(.02,Math.min(.98,fTarget+v))}
+$('moveL').onclick=()=>nudge(-.12);$('moveR').onclick=()=>nudge(.12);
+$('smash').onclick=()=>{
+  if(!playing)return;
+  if(human==='F'){effect('GNADE? ABGELEHNT');return}
+  if(smashCharge>=.999){smashArmed=true;updatePower();effect('SMASH BEREIT')}
+};
+addEventListener('keydown',e=>{
+  if(e.key==='ArrowLeft'||e.key.toLowerCase()==='a')nudge(-.08);
+  if(e.key==='ArrowRight'||e.key.toLowerCase()==='d')nudge(.08);
+  if(e.code==='Space'){e.preventDefault();$('smash').click()}
+});
+updatePower();place();
 
 const KEY='mythenquai-open-v3';
 let st={phase:'opinions',opinions:[],baseD:.35,finalD:null,bets:[]};
