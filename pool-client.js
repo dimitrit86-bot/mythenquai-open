@@ -82,7 +82,18 @@ async function loadAdmin(){
   try{
     const d=await rpc('mq_admin_bet_log',{p_pin:adminPin});
     $('adminInfo').textContent='Phase: '+d.pool.status+' · Runde '+d.pool.round_no+' · '+d.bets.length+' Einsätze';
-    $('adminCodes').innerHTML=d.bets.map(b=>'<div class="person"><b>'+esc(b.name)+'</b> · '+(b.side==='D'?'Dimitri':'Florian')+' · '+CHF(b.amount)+'<br><span class="codebox">'+esc(b.access_code||'–')+'</span><br><span class="note">'+esc(b.status)+'</span></div>').join('');
+    $('adminCodes').innerHTML=d.bets.map(b=>'<div class="person"><b>'+esc(b.name)+'</b> · '+(b.side==='D'?'Dimitri':'Florian')+' · '+CHF(b.amount)+'<br><span class="codebox">'+esc(b.access_code||'–')+'</span><br><span class="note">'+esc(b.status)+'</span><div class="row" style="margin-top:8px"><button class="btn warn deleteBetBtn" data-id="'+b.id+'" data-name="'+esc(b.name)+'">WETTE LÖSCHEN</button></div></div>').join('');
+    document.querySelectorAll('.deleteBetBtn').forEach(btn=>{
+      btn.onclick=async()=>{
+        const n=btn.dataset.name||'diese Wette';
+        if(!confirm('Wirklich '+n+' löschen?'))return;
+        try{
+          await rpc('mq_admin_delete_bet',{p_pin:adminPin,p_bet_id:btn.dataset.id});
+          await refresh();
+          await loadAdmin();
+        }catch(e){alert(e.message);}
+      };
+    });
   }catch(e){$('adminInfo').textContent=e.message;}
 }
 
