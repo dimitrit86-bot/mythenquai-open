@@ -137,6 +137,11 @@ $('adminRecalc').onclick=()=>adminAction('admin_recalc');
 $('adminFinalize').onclick=()=>adminAction('admin_finalize');
 $('adminWinD').onclick=()=>adminAction('admin_settle',{winner:'D'});
 $('adminWinF').onclick=()=>adminAction('admin_settle',{winner:'F'});
+if($('sharePool'))$('sharePool').onclick=()=>{
+  const url='https://dimitrit86-bot.github.io/mythenquai-open/betting.html';
+  const text='MYTHENQUAI OPEN 🎾\n\n1) Einsatz vormerken\n2) 4-stelligen Code speichern\n3) Nach Poolschluss Quote prüfen\n4) Mit Code bestätigen oder aussteigen\n5) Nach dem Match zeigt das Tool die Abrechnung\n\n'+url;
+  location.href='https://wa.me/?text='+encodeURIComponent(text);
+};
 $('adminReset').onclick=async()=>{
   if(!adminPin)return;
   if(!confirm('Wirklich alle Einsätze, Codes und den aktuellen Pool zurücksetzen?'))return;
