@@ -1,5 +1,7 @@
 (()=>{
 const API='https://wpmyuzpcraduhaybjvmb.supabase.co/functions/v1/betting-api';
+const REST='https://wpmyuzpcraduhaybjvmb.supabase.co/rest/v1/rpc/';
+const PUB='sb_publishable_yPj36dTiaHySwtJgKCA-wQ_lJuoE0OQ';
 const $=id=>document.getElementById(id);
 const CHF=n=>'CHF '+Number(n||0).toFixed(2);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -11,6 +13,13 @@ async function api(body){
   const r=await fetch(API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
   const d=await r.json();
   if(!r.ok) throw new Error(d.error||'Fehler');
+  return d;
+}
+
+async function rpc(name,body){
+  const r=await fetch(REST+name,{method:'POST',headers:{'content-type':'application/json','apikey':PUB,'authorization':'Bearer '+PUB},body:JSON.stringify(body)});
+  const d=await r.json();
+  if(!r.ok)throw new Error(d.message||d.error||'RPC Fehler');
   return d;
 }
 
@@ -44,13 +53,13 @@ function render(){
 
 async function submitBet(){
   const name=$('name').value.trim();
-  const email=$('email').value.trim();
   const side=$('side').value;
   const amount=+$('amount').value;
   try{
-    await api({action:'submit',name,email,side,amount});
+    const created=await api({action:'submit',name,email:'noemail@mythenquai.local',side,amount});
+    const accessCode=await rpc('mq_get_entry_code',{p_bet_id:created.id});
     $('entryForm').classList.add('hidden');
-    $('entryMsg').innerHTML='<div class="person"><span class="ok"><b>Einsatz vorgemerkt ✓</b></span><br>'+esc(name)+' · '+(side==='D'?'Dimitri':'Florian')+' · '+CHF(amount)+'<br><span class="note">Noch unverbindlich. Nach Poolschluss erhältst du Quote und persönlichen Code.</span><div class="row" style="margin-top:10px"><button class="btn" id="again">WEITEREN EINSATZ ERFASSEN</button></div></div>';
+    $('entryMsg').innerHTML='<div class="person"><span class="ok"><b>Einsatz vorgemerkt ✓</b></span><br>'+esc(name)+' · '+(side==='D'?'Dimitri':'Florian')+' · '+CHF(amount)+'<hr><span class="note">Dein persönlicher Code:</span><br><span class="codebox">'+esc(accessCode)+'</span><br><span class="note">Bitte speichern oder Screenshot machen. Mit diesem Code kannst du später deine Quote öffnen und bestätigen. Falls du ihn verlierst, kann der Admin ihn im Admin-Center nachsehen.</span><div class="row" style="margin-top:10px"><button class="btn" id="again">WEITEREN EINSATZ ERFASSEN</button></div></div>';
     $('again').onclick=()=>{$('entryMsg').innerHTML='';$('entryForm').classList.remove('hidden');};
     await refresh();
   }catch(e){$('entryMsg').innerHTML='<p class="out">'+esc(e.message)+'</p>';}
@@ -61,7 +70,7 @@ async function adminLogin(){
   const p=prompt('Admin-PIN');
   if(!p)return;
   try{
-    await api({action:'admin_overview',admin_pin:p});
+    await rpc('mq_admin_bet_log',{p_pin:p});
     adminPin=p;sessionStorage.setItem('mq_admin_pin',p);render();
   }catch(e){alert('Falscher PIN oder Backendfehler.');}
 }
@@ -69,9 +78,9 @@ async function adminLogin(){
 async function loadAdmin(){
   if(!adminPin)return;
   try{
-    const d=await api({action:'admin_overview',admin_pin:adminPin});
+    const d=await rpc('mq_admin_bet_log',{p_pin:adminPin});
     $('adminInfo').textContent='Phase: '+d.pool.status+' · Runde '+d.pool.round_no+' · '+d.bets.length+' Einsätze';
-    $('adminCodes').innerHTML=d.bets.map(b=>'<div class="person"><b>'+esc(b.name)+'</b> · '+esc(b.email)+' · '+(b.side==='D'?'Dimitri':'Florian')+' · '+CHF(b.amount)+'<br><span class="note">'+esc(b.status)+'</span></div>').join('');
+    $('adminCodes').innerHTML=d.bets.map(b=>'<div class="person"><b>'+esc(b.name)+'</b> · '+(b.side==='D'?'Dimitri':'Florian')+' · '+CHF(b.amount)+'<br><span class="codebox">'+esc(b.access_code||'–')+'</span><br><span class="note">'+esc(b.status)+'</span></div>').join('');
   }catch(e){$('adminInfo').textContent=e.message;}
 }
 
@@ -94,7 +103,7 @@ async function openPersonal(showError=true){
     const b=await api({action:'access',code});
     $('personalCard').classList.remove('hidden');
     $('accessMsg').textContent='';
-    $('personalBody').innerHTML='<div class="person"><b>'+esc(b.name)+'</b><br><span class="note">'+esc(b.email)+'</span><hr><b>'+(b.side==='D'?'Dimitri':'Florian')+'</b> · '+CHF(b.amount)+'<br>Quote: <b>'+Number(b.quote).toFixed(2)+'×</b><br>Möglicher Nettogewinn: <b>'+CHF(b.net_gain)+'</b><br>Maximaler Verlust: <b>'+CHF(b.amount)+'</b><br><br><span class="'+(b.status==='confirmed'?'ok':'wait')+'"><b>'+(b.status==='confirmed'?'VERBINDLICH BESTÄTIGT':'NOCH NICHT BESTÄTIGT')+'</b></span>'+(b.phase==='confirm'&&b.status!=='confirmed'?'<div class="row" style="margin-top:10px"><button class="btn primary" id="confirmMine">BESTÄTIGEN</button><button class="btn warn" id="leaveMine">AUSSTEIGEN</button></div>':'')+'</div>';
+    $('personalBody').innerHTML='<div class="person"><b>'+esc(b.name)+'</b><hr><b>'+(b.side==='D'?'Dimitri':'Florian')+'</b> · '+CHF(b.amount)+'<br>Quote: <b>'+Number(b.quote).toFixed(2)+'×</b><br>Möglicher Nettogewinn: <b>'+CHF(b.net_gain)+'</b><br>Maximaler Verlust: <b>'+CHF(b.amount)+'</b><br><br><span class="'+(b.status==='confirmed'?'ok':'wait')+'"><b>'+(b.status==='confirmed'?'VERBINDLICH BESTÄTIGT':'NOCH NICHT BESTÄTIGT')+'</b></span>'+(b.phase==='confirm'&&b.status!=='confirmed'?'<div class="row" style="margin-top:10px"><button class="btn primary" id="confirmMine">BESTÄTIGEN</button><button class="btn warn" id="leaveMine">AUSSTEIGEN</button></div>':'')+'</div>';
     if($('confirmMine'))$('confirmMine').onclick=()=>participant('confirm');
     if($('leaveMine'))$('leaveMine').onclick=()=>participant('leave');
   }catch(e){
