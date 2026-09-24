@@ -55,6 +55,17 @@ hr{border:0;border-top:1px solid #29454c;margin:14px 0}
   <span class="pill" id="p4">4 · Abrechnung</span>
 </div>
 
+<section class="card">
+  <h2>So funktioniert’s</h2>
+  <p class="note"><b>1. Einsatz vormerken:</b> Wähle Dimitri oder Florian und gib deinen maximalen Einsatz an. Noch unverbindlich.</p>
+  <p class="note"><b>2. Code speichern:</b> Direkt danach erhältst du deinen persönlichen 4-stelligen Code. <b>Speichere ihn unbedingt.</b></p>
+  <p class="note"><b>3. Poolschluss:</b> Sobald alle Einsätze drin sind, wird der Pool geschlossen und daraus die Quote berechnet.</p>
+  <p class="note"><b>4. Quote prüfen:</b> Mit deinem Code öffnest du deine Wette und siehst Quote, möglichen Nettogewinn und Maximalverlust. Danach bestätigst du verbindlich oder steigst aus.</p>
+  <p class="note"><b>5. Falls jemand aussteigt:</b> Der Pool wird neu berechnet. Bei schlechterer Quote musst du nochmals bestätigen.</p>
+  <p class="note"><b>6. Final & Abrechnung:</b> Wenn alle verbleibenden bestätigt haben, wird der Pool final. Nach dem Match wird automatisch berechnet, wer wem wie viel bezahlt.</p>
+  <button class="btn primary" id="sharePool">ABLAUF & LINK TEILEN</button>
+</section>
+
 <section class="card" id="entryCard">
   <h2>Einsatz vormerken</h2>
   <p class="note">Die Eingabe ist noch unverbindlich. Während der Einsatzrunde werden weder Quote noch Poolverteilung angezeigt.</p>
@@ -76,7 +87,7 @@ hr{border:0;border-top:1px solid #29454c;margin:14px 0}
   <h2>Persönliche Quote abrufen</h2>
   <p class="note">Deinen persönlichen Code bekommst du direkt nach der Einsatzabgabe. Damit kannst du nach Poolschluss deine Quote öffnen und bestätigen.</p>
   <div class="grid2">
-    <div><label>Persönlicher Code</label><input id="accessCode" placeholder="z. B. K7P4-M2Q8"></div>
+    <div><label>Persönlicher Code</label><input id="accessCode" placeholder="z. B. 9000"></div>
     <div style="display:flex;align-items:end"><button class="btn primary" id="openBet">MEINE WETTE ÖFFNEN</button></div>
   </div>
   <p class="note" id="accessMsg"></p>
@@ -121,6 +132,6 @@ hr{border:0;border-top:1px solid #29454c;margin:14px 0}
 </section>
 </div>
 
-<script src="pool-client.js?v=3"></script>
+<script src="pool-client.js?v=4"></script>
 </body>
 </html>
