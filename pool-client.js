@@ -135,6 +135,19 @@ $('adminRecalc').onclick=()=>adminAction('admin_recalc');
 $('adminFinalize').onclick=()=>adminAction('admin_finalize');
 $('adminWinD').onclick=()=>adminAction('admin_settle',{winner:'D'});
 $('adminWinF').onclick=()=>adminAction('admin_settle',{winner:'F'});
+$('adminReset').onclick=async()=>{
+  if(!adminPin)return;
+  if(!confirm('Wirklich alle Einsätze, Codes und den aktuellen Pool zurücksetzen?'))return;
+  try{
+    await rpc('mq_admin_reset',{p_pin:adminPin});
+    code='';sessionStorage.removeItem('mq_code');
+    if($('personalCard'))$('personalCard').classList.add('hidden');
+    if($('entryMsg'))$('entryMsg').innerHTML='';
+    if($('entryForm'))$('entryForm').classList.remove('hidden');
+    await refresh();
+    alert('Alles wurde zurückgesetzt.');
+  }catch(e){alert(e.message);}
+};
 
 refresh();
 setInterval(refresh,15000);
