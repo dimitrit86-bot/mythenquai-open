@@ -59,7 +59,7 @@ async function submitBet(){
     const created=await api({action:'submit',name,email:'noemail@mythenquai.local',side,amount});
     const accessCode=await rpc('mq_get_entry_code',{p_bet_id:created.id});
     $('entryForm').classList.add('hidden');
-    $('entryMsg').innerHTML='<div class="person"><span class="ok"><b>Einsatz vorgemerkt ✓</b></span><br>'+esc(name)+' · '+(side==='D'?'Dimitri':'Florian')+' · '+CHF(amount)+'<hr><span class="note">Dein persönlicher Code:</span><br><span class="codebox">'+esc(accessCode)+'</span><br><span class="note">Bitte speichern oder Screenshot machen. Mit diesem Code kannst du später deine Quote öffnen und bestätigen. Falls du ihn verlierst, kann der Admin ihn im Admin-Center nachsehen.</span><div class="row" style="margin-top:10px"><button class="btn" id="again">WEITEREN EINSATZ ERFASSEN</button></div></div>';
+    $('entryMsg').innerHTML='<div class="person"><span class="ok"><b>Einsatz vorgemerkt ✓</b></span><br>'+esc(name)+' · '+(side==='D'?'Dimitri':'Florian')+' · '+CHF(amount)+'<hr><span class="note">Dein persönlicher Code:</span><br><span class="codebox">'+esc(accessCode)+'</span><br><span class="note">Mit diesem Code kannst du später deine Quote öffnen und bestätigen. Falls du ihn verlierst, kann der Admin ihn im Admin-Center nachsehen.</span><div class="row" style="margin-top:10px"><button class="btn" id="again">WEITEREN EINSATZ ERFASSEN</button></div></div>';
     $('again').onclick=()=>{$('entryMsg').innerHTML='';$('entryForm').classList.remove('hidden');};
     await refresh();
   }catch(e){$('entryMsg').innerHTML='<p class="out">'+esc(e.message)+'</p>';}
