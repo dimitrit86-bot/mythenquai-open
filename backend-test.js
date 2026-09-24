@@ -1,0 +1,1 @@
+fetch('https://wpmyuzpcraduhaybjvmb.supabase.co/functions/v1/betting-api',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'state'})}).then(r=>r.json()).then(console.log);
