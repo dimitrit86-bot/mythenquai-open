@@ -119,6 +119,14 @@ async function loadAdmin(){
   try{
     const d=await rpc('mq_admin_bet_log',{p_pin:adminPin});
     $('adminInfo').textContent='Phase: '+d.pool.status+' · Runde '+d.pool.round_no+' · '+d.bets.length+' Einsätze';
+    const active=d.bets.filter(b=>b.status!=='out');
+    const dPool=active.filter(b=>b.side==='D').reduce((s,b)=>s+Number(b.amount||0),0);
+    const fPool=active.filter(b=>b.side==='F').reduce((s,b)=>s+Number(b.amount||0),0);
+    const total=dPool+fPool;
+    $('adminPoolD').textContent=CHF(dPool);
+    $('adminPoolF').textContent=CHF(fPool);
+    $('adminQD').textContent=(dPool>0&&fPool>0)?(total/dPool).toFixed(2)+'×':'–';
+    $('adminQF').textContent=(dPool>0&&fPool>0)?(total/fPool).toFixed(2)+'×':'–';
     $('adminCodes').innerHTML=d.bets.map(b=>'<div class="person"><b>'+esc(b.name)+'</b> · '+(b.side==='D'?'Dimitri':'Florian')+' · '+CHF(b.amount)+'<br><span class="codebox">'+esc(b.access_code||'–')+'</span><br><span class="note">'+esc(b.status)+'</span><div class="row" style="margin-top:8px"><button class="btn warn deleteBetBtn" data-id="'+b.id+'" data-name="'+esc(b.name)+'">WETTE LÖSCHEN</button></div></div>').join('');
     document.querySelectorAll('.deleteBetBtn').forEach(btn=>{
       btn.onclick=async()=>{
