@@ -75,7 +75,7 @@ hr{border:0;border-top:1px solid #29454c;margin:14px 0}
 
 <section class="card hidden" id="accessCard">
   <h2>Persönliche Quote abrufen</h2>
-  <p class="note">Nach Schliessung der Einsatzrunde erhält jede Person per E-Mail ihren persönlichen Code. Im Prototyp wird der Code im Admin-Bereich simuliert.</p>
+  <p class="note">Nach Schliessung der Einsatzrunde erhält jede Person per E-Mail ihren persönlichen Code. Der persönliche Code wird nach Schliessung der Einsatzrunde bereitgestellt.</p>
   <div class="grid2">
     <div><label>Persönlicher Code</label><input id="accessCode" placeholder="z. B. K7P4-M2Q8"></div>
     <div style="display:flex;align-items:end"><button class="btn primary" id="openBet">MEINE WETTE ÖFFNEN</button></div>
@@ -107,7 +107,7 @@ hr{border:0;border-top:1px solid #29454c;margin:14px 0}
 
 <section class="card hidden" id="adminCard">
   <h2>Admin-Bereich</h2>
-  <p class="note">Admin-PIN geändert. E-Mails werden in dieser statischen Version weiterhin nur simuliert. Für den späteren echten Versand ist BCC an <b>brokkoli86@gmail.com</b> vorgesehen.</p>
+  <p class="note">Admin-Funktionen laufen jetzt über das gemeinsame Backend.</p>
   <div class="row">
     <button class="btn" id="adminCloseEntry">EINSATZRUNDE SCHLIESSEN</button>
     <button class="btn" id="adminRecalc">NACH AUSSTIEGEN NEU BERECHNEN</button>
@@ -122,184 +122,6 @@ hr{border:0;border-top:1px solid #29454c;margin:14px 0}
 </section>
 </div>
 
-<script>
-(()=>{
-const $=id=>document.getElementById(id), CHF=n=>'CHF '+(Math.round(n*100)/100).toFixed(2);
-const KEY='mq-admin-pool-v3', ADMIN_PIN='09053102', BCC_EMAIL='brokkoli86@gmail.com';
-let s={phase:'entry',bets:[],admin:false,round:0,winner:null};
-try{Object.assign(s,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){}
-const save=()=>localStorage.setItem(KEY,JSON.stringify(s));
-const esc=x=>String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function makeCode(){
-  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let a='',b='';
-  for(let i=0;i<4;i++)a+=chars[Math.floor(Math.random()*chars.length)];
-  for(let i=0;i<4;i++)b+=chars[Math.floor(Math.random()*chars.length)];
-  return a+'-'+b;
-}
-function activeBets(){return s.bets.filter(b=>b.status!=='out')}
-function pools(){
-  let d=0,f=0;activeBets().forEach(b=>b.side==='D'?d+=b.amount:f+=b.amount);
-  return{d,f,total:d+f};
-}
-function odds(){
-  const p=pools();
-  if(!p.d||!p.f)return{p};
-  return{p,dGross:p.total/p.d,fGross:p.total/p.f,dNet:p.f/p.d,fNet:p.d/p.f};
-}
-function quoteFor(b){const o=odds();return o.dGross?(b.side==='D'?o.dGross:o.fGross):null}
-function netFor(b){const o=odds();return o.dGross?(b.side==='D'?o.dNet:o.fNet):null}
-
-$('submitBet').onclick=()=>{
-  if(s.phase!=='entry')return;
-  const name=$('name').value.trim(),email=$('email').value.trim(),amount=+$('amount').value;
-  if(!name)return $('entryMsg').textContent='Bitte Name oder Kürzel eingeben.';
-  if(!email||!email.includes('@'))return $('entryMsg').textContent='Bitte gültige E-Mail eingeben.';
-  if(!(amount>0))return $('entryMsg').textContent='Bitte positiven CHF-Betrag eingeben.';
-  s.bets.push({id:String(Date.now())+Math.random().toString(16).slice(2),name,email,side:$('side').value,amount:Math.round(amount*100)/100,status:'preliminary',code:null,confirmedQuote:null});
-  const sideLabel=$('side').value==='D'?'Dimitri':'Florian';
-  const amountLabel=CHF(Math.round(amount*100)/100);
-  $('name').value='';$('email').value='';save();render();
-  $('entryForm').classList.add('hidden');
-  $('entryMsg').innerHTML='<div class="person"><span class="ok"><b>Einsatz vorgemerkt ✓</b></span><br>'+
-    esc(name)+' · '+sideLabel+' · '+amountLabel+
-    '<br><span class="note">Dein Einsatz ist noch unverbindlich. Sobald die Einsatzrunde geschlossen ist, erhältst du deine Quote und den persönlichen Bestätigungscode.</span>'+
-    '<div class="row" style="margin-top:10px"><button class="btn" id="newEntry">WEITEREN EINSATZ ERFASSEN</button></div></div>';
-  $('entryMsg').scrollIntoView({behavior:'smooth',block:'nearest'});
-  $('newEntry').onclick=()=>{$('entryMsg').innerHTML='';$('entryForm').classList.remove('hidden');$('name').focus()};
-};
-
-$('adminLogin').onclick=()=>{
-  if(s.admin){s.admin=false;save();render();return}
-  const pin=prompt('Admin-PIN');
-  if(pin===ADMIN_PIN){s.admin=true;save();render()} else if(pin!==null) alert('Falscher PIN.');
-};
-
-$('adminCloseEntry').onclick=()=>{
-  if(!s.admin||s.phase!=='entry')return;
-  const p=pools();if(!p.d||!p.f)return alert('Auf beiden Seiten braucht es mindestens einen Einsatz.');
-  s.phase='confirm';s.round=1;
-  s.bets.forEach(b=>{if(!b.code)b.code=makeCode();b.status='pending';b.confirmedQuote=null});
-  save();render();
-};
-
-$('openBet').onclick=()=>{
-  const code=$('accessCode').value.trim().toUpperCase();
-  const b=s.bets.find(x=>x.code===code);
-  if(!b)return $('accessMsg').textContent='Code nicht gefunden.';
-  if(b.status==='out')return $('accessMsg').textContent='Diese Wette wurde zurückgezogen.';
-  sessionStorage.setItem('mq-current-code',code);
-  $('accessMsg').textContent='';renderPersonal();
-};
-
-function renderPersonal(){
-  const code=sessionStorage.getItem('mq-current-code');
-  const b=s.bets.find(x=>x.code===code);
-  if(!b||!['confirm','final','settle'].includes(s.phase)||b.status==='out'){
-    $('personalCard').classList.add('hidden');return;
-  }
-  $('personalCard').classList.remove('hidden');
-  const q=quoteFor(b),net=netFor(b);
-  const status=b.status==='confirmed'
-    ? '<span class="status ok">VERBINDLICH BESTÄTIGT</span>'
-    : '<span class="status wait">NOCH NICHT BESTÄTIGT</span>';
-  $('personalBody').innerHTML=
-    '<div class="person"><b>'+esc(b.name)+'</b><br>'+
-    '<span class="note">'+esc(b.email)+'</span><hr>'+
-    '<b>'+(b.side==='D'?'Dimitri':'Florian')+'</b> · Einsatz '+CHF(b.amount)+'<br>'+
-    'Finale aktuelle Quote: <b>'+(q?q.toFixed(2):'–')+'×</b><br>'+
-    'Möglicher Nettogewinn: <b>'+(net?CHF(b.amount*net):'–')+'</b><br>'+
-    'Maximaler Verlust: <b>'+CHF(b.amount)+'</b><br><br>'+status+
-    (s.phase==='confirm'&&b.status!=='confirmed'
-      ? '<div class="row" style="margin-top:10px"><button class="btn primary" id="confirmMine">WETTE VERBINDLICH BESTÄTIGEN</button><button class="btn warn" id="leaveMine">AUSSTEIGEN</button></div>'
-      : '')+
-    '</div>';
-  const c=$('confirmMine'),l=$('leaveMine');
-  if(c)c.onclick=()=>{b.status='confirmed';b.confirmedQuote=q;save();render();renderPersonal()};
-  if(l)l.onclick=()=>{if(confirm('Wirklich aussteigen?')){b.status='out';b.confirmedQuote=null;save();render();$('personalCard').classList.add('hidden');sessionStorage.removeItem('mq-current-code')}};
-}
-
-$('adminRecalc').onclick=()=>{
-  if(!s.admin||s.phase!=='confirm')return;
-  const p=pools();if(!p.d||!p.f)return alert('Nach Ausstiegen ist eine Seite leer.');
-  s.round++;
-  s.bets.forEach(b=>{
-    if(b.status==='out')return;
-    const newQ=quoteFor(b);
-    if(b.status==='confirmed'&&b.confirmedQuote!=null&&newQ>=b.confirmedQuote){
-      b.confirmedQuote=newQ;
-    }else{
-      b.status='pending';b.confirmedQuote=null;
-    }
-  });
-  save();render();renderPersonal();
-};
-
-$('adminFinalize').onclick=()=>{
-  if(!s.admin||s.phase!=='confirm')return;
-  if(activeBets().some(b=>b.status!=='confirmed'))return alert('Noch nicht alle verbleibenden Teilnehmer haben bestätigt.');
-  const p=pools();if(!p.d||!p.f)return alert('Beide Seiten müssen vertreten sein.');
-  s.phase='final';save();render();renderPersonal();
-};
-
-$('adminWinD').onclick=()=>{if(s.admin&&s.phase==='final'){s.winner='D';s.phase='settle';save();render();renderPersonal()}};
-$('adminWinF').onclick=()=>{if(s.admin&&s.phase==='final'){s.winner='F';s.phase='settle';save();render();renderPersonal()}};
-$('adminReset').onclick=()=>{if(s.admin&&confirm('Alles löschen?')){localStorage.removeItem(KEY);sessionStorage.removeItem('mq-current-code');location.reload()}};
-
-function transfers(winner){
-  const bets=activeBets(),wins=bets.filter(b=>b.side===winner),loses=bets.filter(b=>b.side!==winner);
-  const wp=wins.reduce((a,b)=>a+b.amount,0),lp=loses.reduce((a,b)=>a+b.amount,0),totalC=Math.round(lp*100);
-  let rec=wins.map(b=>({name:b.name,cents:Math.floor(totalC*b.amount/wp),frac:(totalC*b.amount/wp)%1}));
-  let used=rec.reduce((a,x)=>a+x.cents,0),rem=totalC-used;rec.sort((a,b)=>b.frac-a.frac);
-  for(let i=0;i<rem;i++)rec[i%rec.length].cents++;
-  let pay=loses.map(b=>({name:b.name,cents:Math.round(b.amount*100)})).sort((a,b)=>b.cents-a.cents);
-  rec.sort((a,b)=>b.cents-a.cents);
-  const out=[];let i=0,j=0;
-  while(i<pay.length&&j<rec.length){
-    if(!pay[i].cents){i++;continue} if(!rec[j].cents){j++;continue}
-    let c=Math.min(pay[i].cents,rec[j].cents);
-    out.push({from:pay[i].name,to:rec[j].name,c});
-    pay[i].cents-=c;rec[j].cents-=c;
-  }
-  return{out,wp,lp};
-}
-
-function render(){
-  const p=pools(),o=odds();
-  $('entryCard').classList.toggle('hidden',s.phase!=='entry');
-  $('accessCard').classList.toggle('hidden',s.phase==='entry');
-  $('finalCard').classList.toggle('hidden',s.phase!=='final'&&s.phase!=='settle');
-  $('settleCard').classList.toggle('hidden',s.phase!=='settle');
-  $('adminCard').classList.toggle('hidden',!s.admin);
-  $('adminLogin').textContent=s.admin?'ADMIN AUS':'ADMIN';
-
-  ['p1','p2','p3','p4'].forEach(x=>$(x).classList.remove('active'));
-  $(s.phase==='entry'?'p1':s.phase==='confirm'?'p2':s.phase==='final'?'p3':'p4').classList.add('active');
-
-  $('entryCount').textContent=s.bets.length+' Einsatz/Einsätze vorgemerkt.';
-  if(s.phase==='final'||s.phase==='settle'){
-    $('finalD').textContent=CHF(p.d);$('finalF').textContent=CHF(p.f);
-    $('finalQD').textContent=o.dGross?o.dGross.toFixed(2)+'×':'–';
-    $('finalQF').textContent=o.fGross?o.fGross.toFixed(2)+'×':'–';
-  }
-
-  if(s.phase==='settle'&&s.winner){
-    const x=transfers(s.winner);
-    $('settlement').innerHTML='<b>'+(s.winner==='D'?'Dimitri':'Florian')+' gewinnt.</b><br><span class="note">Verlierer-Pool '+CHF(x.lp)+' = gesamte Nettogewinne '+CHF(x.lp)+'.</span>';
-    $('transfers').innerHTML=x.out.map(t=>'<div class="transfer"><span><b>'+esc(t.from)+'</b> → '+esc(t.to)+'</span><b>'+CHF(t.c/100)+'</b></div>').join('');
-  }
-
-  $('adminInfo').innerHTML='Phase: <b>'+s.phase+'</b> · Runde: <b>'+s.round+'</b> · Aktiv: <b>'+activeBets().length+'</b> · Bestätigt: <b>'+activeBets().filter(b=>b.status==='confirmed').length+'</b>';
-  $('adminCodes').innerHTML=s.phase==='entry'?'':('<h3>Simulierte E-Mails / Codes</h3>'+s.bets.map(b=>
-    '<div class="person"><b>'+esc(b.name)+'</b> · '+esc(b.email)+' · '+(b.side==='D'?'Dimitri':'Florian')+' · '+CHF(b.amount)+
-    '<br><span class="codebox">'+(b.code||'–')+'</span><br><span class="note">'+
-    (b.status==='out'?'ausgestiegen':b.status==='confirmed'?'bestätigt':'Bestätigung offen')+' · BCC '+esc(BCC_EMAIL)+
-    '</span></div>').join(''));
-
-  renderPersonal();
-}
-render();
-})();
-</script>
+<script src="pool-client.js?v=1"></script>
 </body>
 </html>
