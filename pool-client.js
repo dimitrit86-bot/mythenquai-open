@@ -9,6 +9,30 @@ let state=null;
 let adminPin=sessionStorage.getItem('mq_admin_pin')||'';
 let code=sessionStorage.getItem('mq_code')||'';
 
+const BET_DEADLINE=new Date('2026-10-01T23:59:00+02:00');
+const MATCH_START=new Date('2026-10-03T15:00:00+02:00');
+
+function formatCountdown(ms){
+  if(ms<=0)return '00T 00:00:00';
+  const s=Math.floor(ms/1000);
+  const d=Math.floor(s/86400);
+  const h=Math.floor((s%86400)/3600);
+  const m=Math.floor((s%3600)/60);
+  const sec=s%60;
+  return d+'T '+String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');
+}
+function updateCountdowns(){
+  const now=new Date();
+  if($('betCountdown'))$('betCountdown').textContent=formatCountdown(BET_DEADLINE-now);
+  if($('matchCountdown'))$('matchCountdown').textContent=formatCountdown(MATCH_START-now);
+  const closed=now>=BET_DEADLINE;
+  if($('deadlineNote'))$('deadlineNote').textContent=closed?'Wettannahme geschlossen.':'Unverbindliche Einsätze werden bis zum 01.10.2026 um 23:59 Uhr angenommen.';
+  if(closed&&$('entryForm')){
+    $('entryForm').classList.add('hidden');
+    if($('entryMsg')&&!$('entryMsg').innerHTML)$('entryMsg').innerHTML='<p class="out"><b>Wettannahme geschlossen.</b></p>';
+  }
+}
+
 async function api(body){
   const r=await fetch(API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
   const d=await r.json();
@@ -54,6 +78,7 @@ function render(){
 }
 
 async function submitBet(){
+  if(new Date()>=BET_DEADLINE){$('entryMsg').innerHTML='<p class="out"><b>Wettannahme geschlossen.</b></p>';return;}
   const name=$('name').value.trim();
   const side=$('side').value;
   const amount=+$('amount').value;
@@ -180,6 +205,8 @@ $('adminReset').onclick=async()=>{
   }catch(e){alert(e.message);}
 };
 
+updateCountdowns();
+setInterval(updateCountdowns,1000);
 refresh();
 setInterval(refresh,15000);
 })();
