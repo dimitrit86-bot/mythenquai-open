@@ -59,9 +59,8 @@ hr{border:0;border-top:1px solid #29454c;margin:14px 0}
   <h2>Einsatz vormerken</h2>
   <p class="note">Die Eingabe ist noch unverbindlich. Während der Einsatzrunde werden weder Quote noch Poolverteilung angezeigt.</p>
   <div id="entryForm">
-    <div class="grid3">
+    <div class="grid2">
       <div><label>Name / Kürzel</label><input id="name" placeholder="z. B. DT"></div>
-      <div><label>E-Mail</label><input id="email" type="email" placeholder="name@example.com"></div>
       <div><label>Seite</label><select id="side"><option value="D">Dimitri</option><option value="F">Florian</option></select></div>
     </div>
     <div class="grid2">
@@ -75,7 +74,7 @@ hr{border:0;border-top:1px solid #29454c;margin:14px 0}
 
 <section class="card hidden" id="accessCard">
   <h2>Persönliche Quote abrufen</h2>
-  <p class="note">Nach Schliessung der Einsatzrunde erhält jede Person per E-Mail ihren persönlichen Code. Der persönliche Code wird nach Schliessung der Einsatzrunde bereitgestellt.</p>
+  <p class="note">Deinen persönlichen Code bekommst du direkt nach der Einsatzabgabe. Damit kannst du nach Poolschluss deine Quote öffnen und bestätigen.</p>
   <div class="grid2">
     <div><label>Persönlicher Code</label><input id="accessCode" placeholder="z. B. K7P4-M2Q8"></div>
     <div style="display:flex;align-items:end"><button class="btn primary" id="openBet">MEINE WETTE ÖFFNEN</button></div>
@@ -107,7 +106,7 @@ hr{border:0;border-top:1px solid #29454c;margin:14px 0}
 
 <section class="card hidden" id="adminCard">
   <h2>Admin-Bereich</h2>
-  <p class="note">Admin-Funktionen laufen jetzt über das gemeinsame Backend.</p>
+  <p class="note">Admin-Funktionen laufen über das gemeinsame Backend. Hier werden alle Einsätze inklusive persönlichem Code geloggt, falls jemand seinen Code verliert.</p>
   <div class="row">
     <button class="btn" id="adminCloseEntry">EINSATZRUNDE SCHLIESSEN</button>
     <button class="btn" id="adminRecalc">NACH AUSSTIEGEN NEU BERECHNEN</button>
@@ -122,6 +121,6 @@ hr{border:0;border-top:1px solid #29454c;margin:14px 0}
 </section>
 </div>
 
-<script src="pool-client.js?v=1"></script>
+<script src="pool-client.js?v=2"></script>
 </body>
 </html>
