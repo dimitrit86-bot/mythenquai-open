@@ -34,6 +34,7 @@ function render(){
   $('entryCard').classList.toggle('hidden',ph!=='entry');
   $('accessCard').classList.toggle('hidden',ph==='entry');
   $('finalCard').classList.toggle('hidden',!['final','settled'].includes(ph));
+  $('bettorOverviewCard').classList.toggle('hidden',!['final','settled'].includes(ph));
   $('settleCard').classList.toggle('hidden',ph!=='settled');
   $('adminCard').classList.toggle('hidden',!adminPin);
   $('adminLogin').textContent=adminPin?'ADMIN AUS':'ADMIN';
@@ -46,6 +47,7 @@ function render(){
     $('finalF').textContent=CHF(state.final.f);
     $('finalQD').textContent=state.final.dGross?Number(state.final.dGross).toFixed(2)+'×':'–';
     $('finalQF').textContent=state.final.fGross?Number(state.final.fGross).toFixed(2)+'×':'–';
+    loadPublicOverview();
   }
   if(adminPin)loadAdmin();
   if(code&&ph!=='entry')loadPersonal(false);
@@ -75,6 +77,16 @@ async function adminLogin(){
     await rpc('mq_admin_bet_log',{p_pin:p});
     adminPin=p;sessionStorage.setItem('mq_admin_pin',p);render();
   }catch(e){alert('Falscher PIN oder Backendfehler.');}
+}
+
+async function loadPublicOverview(){
+  try{
+    const d=await rpc('mq_public_final_overview',{});
+    if(!d||!d.available){$('bettorOverview').innerHTML='';return;}
+    $('bettorOverview').innerHTML=(d.bets||[]).map(b=>'<div class="person"><b>'+esc(b.name)+'</b> · '+(b.side==='D'?'Dimitri':'Florian')+' · '+CHF(b.amount)+'<br><span class="note">Quote: '+Number(b.quote).toFixed(2)+'× · Erwarteter Nettogewinn: <b>'+CHF(b.net_gain)+'</b></span></div>').join('');
+  }catch(e){
+    $('bettorOverview').innerHTML='<p class="note">Übersicht konnte nicht geladen werden.</p>';
+  }
 }
 
 async function loadAdmin(){
