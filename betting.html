@@ -107,7 +107,7 @@ hr{border:0;border-top:1px solid #29454c;margin:14px 0}
 
 <section class="card hidden" id="adminCard">
   <h2>Admin-Bereich</h2>
-  <p class="note">Prototyp: Admin-PIN <b>0505</b>. E-Mails werden hier nur simuliert.</p>
+  <p class="note">Admin-PIN geändert. E-Mails werden in dieser statischen Version weiterhin nur simuliert. Für den späteren echten Versand ist BCC an <b>brokkoli86@gmail.com</b> vorgesehen.</p>
   <div class="row">
     <button class="btn" id="adminCloseEntry">EINSATZRUNDE SCHLIESSEN</button>
     <button class="btn" id="adminRecalc">NACH AUSSTIEGEN NEU BERECHNEN</button>
@@ -125,7 +125,7 @@ hr{border:0;border-top:1px solid #29454c;margin:14px 0}
 <script>
 (()=>{
 const $=id=>document.getElementById(id), CHF=n=>'CHF '+(Math.round(n*100)/100).toFixed(2);
-const KEY='mq-admin-pool-v3', ADMIN_PIN='0505';
+const KEY='mq-admin-pool-v3', ADMIN_PIN='09053102', BCC_EMAIL='brokkoli86@gmail.com';
 let s={phase:'entry',bets:[],admin:false,round:0,winner:null};
 try{Object.assign(s,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){}
 const save=()=>localStorage.setItem(KEY,JSON.stringify(s));
@@ -293,7 +293,7 @@ function render(){
   $('adminCodes').innerHTML=s.phase==='entry'?'':('<h3>Simulierte E-Mails / Codes</h3>'+s.bets.map(b=>
     '<div class="person"><b>'+esc(b.name)+'</b> · '+esc(b.email)+' · '+(b.side==='D'?'Dimitri':'Florian')+' · '+CHF(b.amount)+
     '<br><span class="codebox">'+(b.code||'–')+'</span><br><span class="note">'+
-    (b.status==='out'?'ausgestiegen':b.status==='confirmed'?'bestätigt':'Bestätigung offen')+
+    (b.status==='out'?'ausgestiegen':b.status==='confirmed'?'bestätigt':'Bestätigung offen')+' · BCC '+esc(BCC_EMAIL)+
     '</span></div>').join(''));
 
   renderPersonal();
