@@ -2,6 +2,7 @@
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.NK=factory();})(typeof globalThis!=='undefined'?globalThis:this,function(){
  'use strict';
  const VERSION='1.0.0', SCHEMA=1;
+ const MACROS=typeof module==='object'&&module.exports?require('./macro-targets.js'):globalThis.NK_MACROS;
  const clone=x=>JSON.parse(JSON.stringify(x));
  function number(v,{optional=false,min=0,max=1e9}={}){
   if(v===null||v===undefined||String(v).trim()===''){if(optional)return null;throw Error('Bitte eine Zahl eingeben.');}
@@ -82,6 +83,7 @@
    }else notes.push('Für einen gewichtsabhängigen Protein-Basiswert bitte Gewicht und Grösse ergänzen.');
   }else notes.push('Automatische Referenzen gelten hier nur für gesunde Erwachsene ab 19 Jahren. Alter ergänzen; bei besonderen Lebenssituationen eigene fachlich abgestimmte Ziele verwenden.');
   for(const [k,v] of Object.entries(p.manual||{}))if(Number.isFinite(v)&&v>0)out[k]={value:v,type:'Eigenes Ziel',note:'Von dir eingetragener Wert, keine automatisch abgeleitete Empfehlung.',year:null,url:null};
+  if(p.nutritionMode){const macro=MACROS.calculate(p);for(const k of ['energy','protein','carbs','fat'])delete out[k];Object.assign(out,macro.values);const baseNotes=notes.filter(n=>!/^Protein:|^Für einen gewichtsabhängigen Protein/.test(n));return {values:out,notes:[...baseNotes,...macro.notes],macro};}
   return {values:out,notes};
  }
  function validateFood(f,keys){
@@ -96,7 +98,7 @@
   s.foods.forEach(f=>validateFood(f,keys));
   for(const r of s.recipes){if(typeof r.id!=='string'||!/^[A-Za-z0-9_-]{1,100}$/.test(r.id)||typeof r.name!=='string'||r.name.length>240||!Array.isArray(r.ingredients)||!r.ingredients.length||r.ingredients.length>200)throw Error('Ungültiges Gericht.');positive(r.servings);if(r.finalWeight!==null&&r.finalWeight!==undefined)positive(r.finalWeight);r.ingredients.forEach(i=>{validateFood(i.food,keys);factor(i.food,i.quantity,i.unit,i.density);});}
   for(const e of s.entries){if(typeof e.id!=='string'||!/^[A-Za-z0-9_-]{1,100}$/.test(e.id)||!Number.isInteger(e.meal)||e.meal<0||e.meal>3||typeof e.name!=='string'||!validDate(e.date)||!e.n)throw Error('Ungültiger Tagebucheintrag.');for(const k of keys){const v=e.n[k];if(!v||v.value!==null&&(!Number.isFinite(v.value)||v.value<0)||!Number.isInteger(v.known)||!Number.isInteger(v.total)||v.known<0||v.total<v.known||!Array.isArray(v.missing)||v.missing.some(m=>typeof m!=='string'))throw Error('Ungültige Nährwert-Zusammenfassung.');}}
-  const p=s.profile;
+  const p=s.profile;MACROS.validate(p);
   if(!['','m','w'].includes(p.sex)||typeof p.special!=='boolean'||typeof p.smoker!=='boolean'||!['','pre','post'].includes(p.menopause)||!['','low','medium','high'].includes(p.phytate)||!p.manual||Array.isArray(p.manual)||typeof p.manual!=='object')throw Error('Ungültiges Referenzprofil.');
   for(const [k,lo,hi] of [['age',0,120],['weight',1,600],['height',40,260],['calcWeight',1,600]])if(p[k]!==null&&p[k]!==undefined&&(!Number.isFinite(p[k])||p[k]<lo||p[k]>hi))throw Error('Ungültiger Profilwert.');
   for(const [k,v] of Object.entries(p.manual))if(!keys.includes(k)||!Number.isFinite(v)||v<=0||v>1e9)throw Error('Ungültiges eigenes Ziel.');
