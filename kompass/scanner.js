@@ -17,11 +17,12 @@ const fields=[
  ['sodium',/natrium|sodium/i,'mg'],['phosphorus',/phosphor(?:us|e)?/i,'mg'],['iron',/eisen|iron|fer\b|ferro/i,'mg'],
  ['zinc',/zink|zinc(?:o)?/i,'mg'],['iodine',/jod|iodine|iode|iodio/i,'µg'],['selenium',/selen(?:ium|io)?/i,'µg']
 ];
-function quantities(s){return [...s.matchAll(/([<≤]?)\s*(\d+(?:[.,]\d+)?)\s*(kcal|kJ|mg|[µμu]g|g)\b/gi)].map(m=>({value:Number(m[2].replace(',','.')),unit:m[3].toLowerCase().replace(/[μu]g/,'µg'),less:!!m[1],raw:m[0].trim()}));}
+function quantities(s){return [...s.matchAll(/(?<![\d.,+−-])([<≤]?)\s*(\d+(?:[.,]\d+)?)\s*(kcal|kJ|mg|[µμu]g|g)\b/gi)].map(m=>({value:Number(m[2].replace(',','.')),unit:m[3].toLowerCase().replace(/[μu]g/,'µg'),less:!!m[1],raw:m[0].trim()}));}
 function parse(text,column='first'){
  const n={},q={},warnings=[],lines=String(text).replace(/\r/g,'').split('\n').filter(Boolean);let basis=/100\s*m\s*l\b/i.test(text)?'ml':'g';
  if(!/100\s*(?:g|ml)\b/i.test(text))warnings.push('Bezugsmenge nicht erkannt. Vor dem Speichern auf 100 g oder 100 ml umrechnen.');
- const pick=a=>column==='last'?a[a.length-1]:a[0];
+ const expectedColumns=root.NK_PORTIONS?.hints(text).length||1;
+ const pick=a=>{if(column==='last'&&expectedColumns>1&&a.length<expectedColumns){warnings.push('Eine Zeile lässt sich der letzten Wertespalte nicht sicher zuordnen und bleibt unbekannt.');return undefined;}return column==='last'?a[a.length-1]:a[0];};
  for(let i=0;i<lines.length;i++){
   let line=lines[i];if(!quantities(line).length&&/^\s*[<≤]?\s*\d/.test(lines[i+1]||''))line+=' '+lines[i+1];
   if(/brennwert|energie|energy|energia|kcal|\bkj\b/i.test(line))for(const [key,u] of [['energy','kcal'],['energyKJ','kj']]){const v=pick(quantities(line).filter(v=>v.unit===u));if(v){if(v.less){n[key]=null;q[key]=v.raw;}else n[key]=v.value;}}
@@ -57,10 +58,50 @@ async function recognize(){if(scanBusy||!image)return;const generation=scanGener
  const result=await ownWorker.recognize(canvas);if(generation!==scanGeneration)return;rawText=result.data.text;barcodeProduct=null;review();message('Ausgelesen. Bitte die erkannten Zahlen mit deinem Foto vergleichen.');
  }catch(err){if(generation!==scanGeneration)return;message('Automatisches Auslesen fehlgeschlagen: '+err.message+' Du kannst die Tabelle als Text oder manuell erfassen.');}finally{await ownWorker?.terminate().catch(()=>{});if(generation===scanGeneration){worker=null;scanBusy=false;const b=$('#recognize-photo');if(b)b.disabled=false;}}}
 function review(){
- const parsed=barcodeProduct?null:parse(rawText),basis=parsed?.basis||'g';$('#scan-review').innerHTML=`<div class="notice"><b>Vor der Übernahme kontrollieren</b><p>${barcodeProduct?'Community-Daten aus Open Food Facts: können veraltet oder unvollständig sein. Die Packung ist massgeblich.':'Keine exakte Messung. Unscharfe Fotos, mehrere Spalten und Dezimalstellen können falsch erkannt werden.'}</p></div><div class="form-grid"><div class="field"><label for="scan-name">Produktname / Marke</label><input id="scan-name" maxlength="240" value="${E(barcodeProduct?fromOFF(barcodeProduct).name:'')}" placeholder="Zum Beispiel meine Proteinmilch"></div><div class="field"><label for="scan-basis">Bestätigte Bezugsmenge</label><select id="scan-basis"><option value="g" ${basis==='g'?'selected':''}>pro 100 g</option><option value="ml" ${basis==='ml'?'selected':''}>pro 100 ml</option></select></div>${!barcodeProduct?'<div class="field"><label for="scan-column">Bei mehreren Wertespalten</label><select id="scan-column"><option value="first">Erste Wertespalte</option><option value="last">Letzte Wertespalte</option></select></div>':''}</div><div id="detected-values"></div><label class="check"><input id="scan-confirm" type="checkbox"> Ich habe die passende 100-g-/100-ml-Spalte und Einheiten geprüft.</label><button class="button wide" type="button" id="scan-transfer">Werte ins bearbeitbare Produkt übernehmen</button><p class="tiny spaced">Noch keine Speicherung. Im nächsten Schritt kannst du jeden Wert korrigieren und das Produkt speichern. Für reine Portionsangaben bitte zuerst auf 100 g/ml umrechnen.</p>`;
- function preview(){const p=barcodeProduct?{n:fromOFF(barcodeProduct).n,warnings:[]}:parse(rawText,$('#scan-column').value);$('#detected-values').innerHTML='<div class="scan-nutrients">'+window.NK_DATA.nutrients.filter(x=>p.n[x.key]!=null).map(x=>`<div><span>${E(x.label)}</span><b>${new Intl.NumberFormat('de-CH',{maximumFractionDigits:3}).format(p.n[x.key])} ${x.unit}</b></div>`).join('')+'</div>'+p.warnings.map(w=>'<p class="tiny">'+E(w)+'</p>').join('');}
- if($('#scan-column'))$('#scan-column').onchange=preview;preview();$('#scan-transfer').onclick=()=>{if(!$('#scan-confirm').checked){message('Bitte zuerst die Bezugsmenge und Einheiten bestätigen.');return;}if(!$('#scan-name').value.trim()){message('Bitte Produktname oder Marke ergänzen.');return;}const parsed=barcodeProduct?null:parse(rawText,$('#scan-column').value),f=barcodeProduct?fromOFF(barcodeProduct,$('#scan-basis').value):{id:'custom-'+(crypto.randomUUID?crypto.randomUUID():Array.from(crypto.getRandomValues(new Uint8Array(16)),v=>v.toString(16).padStart(2,'0')).join('')),n:parsed.n,q:parsed.q,density:null,kind:'custom',source:'Packungsfoto / Text · von mir geprüft'};f.name=$('#scan-name').value.trim();f.basis=$('#scan-basis').value;const n={};for(const field of window.NK_DATA.nutrients)n[field.key]=f.n[field.key]??null;f.n=n;stop();dlg.close();window.NK_APP.reviewFood(f);};
+ const P=root.NK_PORTIONS,all=window.NK_DATA.nutrients,guesses=barcodeProduct?[{amount:100,unit:'g'}]:P.hints(rawText);
+ let selected=barcodeProduct?{...fromOFF(barcodeProduct),warnings:[]}:parse(rawText),previewResult=null;
+ const suggested=guesses[0],basis=suggested?.unit||selected.basis||'g';
+ $('#scan-review').innerHTML=`<div class="notice"><b>Ausgangswerte und Bezugsmenge prüfen</b><p>${barcodeProduct?'Community-Daten aus Open Food Facts. Die gelieferten Werte gelten bereits pro 100 g/ml. Nicht die Packungsgrösse eintragen.':'Die Erkennung kann auch eine 30-g-Portionsspalte lesen. Trage die Menge ein, für die die angezeigten Ausgangswerte gelten.'}</p></div><div class="form-grid"><div class="field full"><label for="scan-name">Produktname / Marke</label><input id="scan-name" maxlength="240" value="${E(barcodeProduct?selected.name:'')}" placeholder="Zum Beispiel meine Proteinmilch"></div>${!barcodeProduct?'<div class="field full"><label for="scan-column">Ausgelesene Wertespalte</label><select id="scan-column"><option value="first">Erste Wertespalte</option><option value="last">Letzte Wertespalte</option></select><small>Keine Prozent-/Referenzwertspalte wählen. Alle Ausgangswerte müssen zur selben Menge gehören.</small></div>':''}<div class="field"><label for="scan-amount">Diese Werte gelten für …</label><input id="scan-amount" inputmode="decimal" value="${suggested?E(suggested.amount):''}" placeholder="z. B. 30" aria-describedby="scan-portion-help" maxlength="20"></div><div class="field"><label for="scan-basis">Einheit der Bezugsmenge</label><select id="scan-basis"><option value="g" ${basis==='g'?'selected':''}>g</option><option value="ml" ${basis==='ml'?'selected':''}>ml</option></select></div></div><p class="small" id="scan-portion-help">Gemeint ist die Tabellenspalte, nicht deine gegessene Menge. Aus 30 g werden rechnerisch 100 g; aus 250 ml werden 100 ml. Gramm und Milliliter werden nicht ineinander umgerechnet.</p><p class="small" id="scan-suggestion">${guesses.length?'Erkannte Mengen als Vorschlag: '+guesses.map(h=>E(h.amount)+' '+h.unit).join(' / ')+'. Bitte mit der gewählten Spalte vergleichen.':'Keine eindeutige Bezugsmenge erkannt. Bitte selbst eintragen.'}</p><div id="scan-conversion-status" class="small" role="status" aria-live="polite"></div><div id="detected-values"></div><label class="check"><input id="scan-confirm" type="checkbox"> Ich habe die Ausgangswerte, ihre Bezugsmenge und die Einheiten geprüft. Alle Werte gehören zu dieser Spalte.</label><button class="button wide" type="button" id="scan-transfer">Auf 100 g/ml umrechnen und weiter</button><p class="tiny spaced">Noch keine Speicherung. Im nächsten Schritt sind die Werte pro 100 g/ml weiter bearbeitbar. Erst «Produkt speichern» übernimmt sie in euren Haushalt.</p>`;
+ const format=x=>new Intl.NumberFormat('de-CH',{maximumFractionDigits:4}).format(x);
+ function table(){
+  const keys=all.filter(f=>selected.n[f.key]!=null||selected.q?.[f.key]);
+  $('#detected-values').innerHTML=`<div class="scan-values-table"><div class="scan-values-head"><span>Nährstoff</span><span>Ausgangswert</span><span id="scan-output-heading">Pro 100 ${E($('#scan-basis').value)}</span></div>${keys.map(f=>`<div class="scan-value-row"><label for="scan-raw-${E(f.key)}">${E(f.label)}<small>${E(f.unit)}</small></label><div><input id="scan-raw-${E(f.key)}" data-scan-nutrient="${E(f.key)}" inputmode="decimal" aria-label="${E(f.label)} – Ausgangswert in ${E(f.unit)}" value="${selected.n[f.key]==null?'':E(selected.n[f.key])}" placeholder="unbekannt">${selected.q?.[f.key]?'<small>'+E(selected.q[f.key])+'</small>':''}</div><output id="scan-out-${E(f.key)}">—</output></div>`).join('')}</div><p class="tiny">Ausgangswerte hier korrigieren. Leere Felder bleiben unbekannt; eine echte 0 bleibt 0. Weitere Nährstoffe lassen sich im nächsten Schritt ergänzen.</p>${(selected.warnings||[]).filter(w=>!w.includes('Vor dem Speichern auf 100')).map(w=>'<p class="tiny">'+E(w)+'</p>').join('')}`;
+ }
+ function refresh(){
+  previewResult=null;$('#scan-confirm').checked=false;$('#scan-transfer').disabled=true;
+  $('#scan-output-heading').textContent='Pro 100 '+$('#scan-basis').value;
+  try{
+   const n={};all.forEach(f=>{const el=$('#scan-raw-'+f.key);n[f.key]=el?el.value:null;});
+   previewResult=P.convert(n,selected.q||{},$('#scan-amount').value,$('#scan-basis').value);
+   all.forEach(f=>{const out=$('#scan-out-'+f.key);if(out)out.textContent=previewResult.n[f.key]===null?'Unbekannt':format(previewResult.n[f.key])+' '+f.unit;});
+   $('#scan-conversion-status').textContent='Umrechnung: Ausgangswert × 100 ÷ '+format(previewResult.sourceAmount)+' → pro 100 '+previewResult.basis+'.';
+   $('#scan-transfer').disabled=!all.some(f=>previewResult.n[f.key]!==null);
+  }catch(e){$('#scan-conversion-status').textContent=e.message;$('#detected-values').querySelectorAll('output').forEach(el=>el.textContent='—');}
+ }
+ table();refresh();
+ $('#scan-amount').oninput=refresh;$('#scan-basis').onchange=refresh;
+ $('#detected-values').oninput=e=>{if(e.target.dataset.scanNutrient)refresh();};
+ if($('#scan-column'))$('#scan-column').onchange=()=>{
+  selected=parse(rawText,$('#scan-column').value);
+  const guess=$('#scan-column').value==='last'?guesses.at(-1):guesses[0];
+  // Changing the column cannot carry a stale portion size unnoticed.
+  $('#scan-amount').value=guesses.length>1&&guess?guess.amount:guesses.length===1&&$('#scan-column').value==='first'?guesses[0].amount:'';
+  if(guess)$('#scan-basis').value=guess.unit;
+  table();refresh();
+ };
+ $('#scan-transfer').onclick=()=>{
+  if(!previewResult){message('Bitte eine gültige Bezugsmenge und Ausgangswerte eingeben.');return;}
+  if(!$('#scan-confirm').checked){message('Bitte Ausgangswerte, Bezugsmenge und Einheiten bestätigen.');return;}
+  const name=$('#scan-name').value.trim();if(!name){message('Bitte Produktname oder Marke ergänzen.');return;}
+  const f=barcodeProduct?fromOFF(barcodeProduct,previewResult.basis):{id:'custom-'+(crypto.randomUUID?crypto.randomUUID():Array.from(crypto.getRandomValues(new Uint8Array(16)),v=>v.toString(16).padStart(2,'0')).join('')),density:null,kind:'custom',source:'Packungsfoto / Text · von mir geprüft'};
+  f.name=name;f.n={...previewResult.n};f.q={...previewResult.q};f.basis=previewResult.basis;
+  f.source+=' · Ausgangswerte pro '+previewResult.sourceAmount+' '+f.basis+'; auf 100 '+f.basis+' umgerechnet';
+  // Validation precedes navigation so a failed conversion never destroys the original input.
+  try{window.NK.validateFood(f,all.map(x=>x.key));}catch(e){message(e.message);return;}
+  stop();dlg.close();window.NK_APP.reviewFood(f);
+ };
 }
+
 async function lookup(code){code=String(code).replace(/\s/g,'');try{if(!/^\d{8,14}$/.test(code))throw Error('Bitte einen Barcode mit 8–14 Ziffern eingeben.');message('Produkt wird gesucht …');const r=await window.NK_HOUSEHOLD.api('barcode',{code});barcodeProduct={...r.product,code:r.product.code||code};review();message('Produkt gefunden. Werte und Bezugsmenge mit der Packung vergleichen.');}catch(e){message(e.message);}}
 async function camera(){const generation=scanGeneration;try{await load('vendor/zxing-browser.min.js','ZXingBrowser');if(generation!==scanGeneration)return;const video=$('#barcode-video');video.hidden=false;message('Barcode in die Kamera halten. Bei verweigertem Zugriff den Code eintippen.');const reader=new ZXingBrowser.BrowserMultiFormatReader();controls=await reader.decodeFromVideoDevice(undefined,video,(result,error,c)=>{if(generation!==scanGeneration){c.stop();return;}if(result){c.stop();controls=null;video.hidden=true;$('#barcode-input').value=result.getText();lookup(result.getText());}});if(generation!==scanGeneration){controls?.stop();controls=null;}}catch(e){message('Kamera nicht verfügbar: '+e.message+' Barcode bitte eintippen.');}}
 root.NK_SCANNER.open=open;
