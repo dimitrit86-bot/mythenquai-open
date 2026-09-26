@@ -1,0 +1,34 @@
+name: Build public Kompass retailer catalogue
+on:
+  push:
+    branches: [kompass-device-catalog-v12]
+    paths: [tools/kompass_catalog_import.py, .github/workflows/kompass-catalog-import.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: kompass-device-catalog-v12
+      - name: Read public bulk export and validate matching products
+        run: python3 tools/kompass_catalog_import.py
+      - name: Validate catalogue JavaScript
+        run: node --check kompass/retail-data.js
+      - name: Commit public catalogue only to review branch
+        run: |
+          git config user.name 'Kompass catalogue importer'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add kompass/retail-data.js kompass/RETAIL-IMPORT.json
+          git diff --cached --quiet || git commit -m 'Import sourced Alpro and Swiss retailer Veggie product records'
+          git push origin HEAD:kompass-device-catalog-v12
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kompass-public-catalogue
+          path: |
+            kompass/retail-data.js
+            kompass/RETAIL-IMPORT.json
+          retention-days: 7
