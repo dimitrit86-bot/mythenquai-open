@@ -1,0 +1,33 @@
+name: Prepare local PDF renderer for Kompass reports
+on:
+  push:
+    branches: [kompass-visual-reports-v17]
+    paths: [.github/workflows/kompass-report-pdf-v17.yml]
+permissions:
+  contents: read
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Fetch pinned public PDF library and its licence
+        run: |
+          mkdir -p vendor/licenses
+          python3 - <<'PY'
+          import urllib.request,hashlib,json
+          from pathlib import Path
+          root='https://raw.githubusercontent.com/parallax/jsPDF/v4.2.1/'
+          rows=[]
+          for source,dest in [('dist/jspdf.umd.min.js','vendor/jspdf.umd.min.js'),('LICENSE','vendor/licenses/jspdf-4.2.1.txt')]:
+            with urllib.request.urlopen(root+source,timeout=25) as r:b=r.read(1500000)
+            assert len(b)>500
+            Path(dest).write_bytes(b)
+            rows.append({'source':root+source,'path':dest,'sha256':hashlib.sha256(b).hexdigest(),'bytes':len(b)})
+          Path('vendor/pdf-lock.json').write_text(json.dumps({'version':'4.2.1','files':rows},indent=2))
+          print(json.dumps(rows,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kompass-pdf-vendor
+          path: vendor/
+          retention-days: 7
