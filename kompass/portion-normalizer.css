@@ -1,0 +1,13 @@
+/* Readable source/normalised comparison at phone widths. */
+#scan-review .scan-values-table{margin:14px 0;border:1px solid var(--border,#dce6dd);border-radius:12px;overflow:hidden}
+#scan-review .scan-values-head,#scan-review .scan-value-row{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr) minmax(0,.95fr);gap:10px;padding:10px;align-items:center}
+#scan-review .scan-values-head{background:var(--soft,#eff5ef);font-size:11px;font-weight:650}
+#scan-review .scan-value-row{border-top:1px solid var(--border,#dce6dd);font-size:12px}
+#scan-review .scan-value-row label{font-size:12px;overflow-wrap:anywhere}
+#scan-review .scan-value-row input{width:100%;min-width:0;box-sizing:border-box;font-size:16px;padding:9px 7px;min-height:44px}
+#scan-review .scan-value-row small{display:block;font-size:10px;margin-top:3px;overflow-wrap:anywhere}
+#scan-review .scan-value-row output{font-weight:650;overflow-wrap:anywhere;line-height:1.4}
+#scan-review #scan-conversion-status{padding:10px;background:var(--soft,#eff5ef);border-radius:10px;min-height:42px}
+#scan-review #scan-amount{font-size:16px}
+#scan-review .field,#scan-review .form-grid>*{min-width:0}
+@media(max-width:380px){#scan-review .scan-value-row,#scan-review .scan-values-head{gap:6px;padding:9px 7px}#scan-review .scan-values-head{font-size:10px}#scan-review .scan-value-row label{font-size:11px}}
