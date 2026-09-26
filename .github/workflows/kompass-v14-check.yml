@@ -1,0 +1,72 @@
+name: Verify Kompass portions product finder and protein celebration
+on:
+  push:
+    branches: [kompass-complete-v14]
+    paths: [tools/nk14/**, tools/apply_nk14.py, tools/nk14_followup.py, .github/workflows/kompass-v14-check.yml]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply reviewed client changes
+        run: |
+          python3 tools/apply_nk14.py
+          if test -f tools/nk14_followup.py; then python3 tools/nk14_followup.py; fi
+      - name: Syntax and pure calculation regressions
+        run: |
+          for file in kompass/*.js; do node --check "$file"; done
+          node kompass/tests/core.test.js
+          node kompass/tests/protein-overview.test.js
+          node kompass/tests/sync-core.test.js
+          node kompass/tests/portion-normalizer.test.js
+          node kompass/tests/product-import.test.js
+      - name: Private product endpoint authorization
+        run: |
+          mkdir -p test-output
+          python3 - <<'PY'
+          import urllib.request,urllib.error,json
+          report=[]
+          url='https://wpmyuzpcraduhaybjvmb.supabase.co/functions/v1/nutrient-product-finder'
+          for label,headers,expected in [('missing session',{},401),('invalid session',{'x-nk-session':'0'*64},401),('foreign origin',{'Origin':'https://example.invalid'},403)]:
+            req=urllib.request.Request(url,data=b'{"action":"search","query":"steak"}',headers={'Content-Type':'application/json',**headers},method='POST')
+            try:
+              with urllib.request.urlopen(req,timeout=25) as r:status=r.status;body=json.load(r)
+            except urllib.error.HTTPError as e:status=e.code;body=json.load(e)
+            assert status==expected,(label,status)
+            assert 'products' not in body and 'profiles' not in body,label
+            report.append({'check':label,'status':status});print('PASS',label,status)
+          open('test-output/live-authorization.json','w').write(json.dumps(report,indent=2))
+          PY
+      - name: Prepare browser engines
+        run: |
+          python3 -m pip install playwright
+          python3 -m playwright install --with-deps chromium webkit
+      - name: Chromium UI integration with synthetic household
+        env:
+          TEST_BROWSER: chromium
+        run: python3 tools/nk14_browser.py
+      - name: WebKit UI integration with synthetic household
+        env:
+          TEST_BROWSER: webkit
+        run: python3 tools/nk14_browser.py
+      - name: Commit tested source to verification branch only
+        run: |
+          git config user.name 'Kompass verifier'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add kompass/ tools/nk14_browser.py
+          git diff --cached --quiet || git commit -m 'Verify portion conversion product finder and per-profile Spanish protein celebration'
+          git push origin HEAD:kompass-complete-v14
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kompass-v14-verified-source
+          path: |
+            kompass/
+            test-output/
+            tools/nk14_browser.py
+          retention-days: 7
