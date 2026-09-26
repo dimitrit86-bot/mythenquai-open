@@ -1,0 +1,10 @@
+/* Keep daily protein needs visible alongside intake, including on small phones. */
+.protein-overview .protein-target{display:flex;flex-direction:column;gap:4px;margin-top:14px;padding:10px 11px;border-radius:10px;background:var(--soft);min-width:0}
+.protein-target>span{font-size:11px;color:var(--muted);line-height:1.35}
+.protein-target>strong{font-size:18px;line-height:1.3;color:var(--green);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.protein-target small{font-size:11px;font-weight:500;white-space:nowrap}
+.protein-overview .metric-number:before{content:'Erfasst';display:block;font-size:11px;font-weight:400;letter-spacing:0;color:var(--muted);line-height:1.4;margin-bottom:5px}
+.protein-overview .metric-bottom{font-size:11px;line-height:1.45}
+.protein-target-kind{font-size:10px;line-height:1.45;color:var(--muted);margin-top:9px}
+.protein-target-help{display:block;text-align:left;min-height:44px;font-size:11px;line-height:1.35;margin-top:3px;max-width:100%}
+@media(max-width:380px){.protein-overview .protein-target{padding:9px 8px}.protein-target>strong{font-size:16px}}
