@@ -1,0 +1,71 @@
+name: Verify Kompass private saving and shared catalogue
+on:
+  push:
+    branches: [kompass-shared-sync-v13]
+    paths: [tools/kompass_v13_payload.*, tools/kompass_v13_fix.py, .github/workflows/kompass-v13-check.yml]
+permissions:
+  contents: write
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: kompass-shared-sync-v13
+      - name: Apply hash-guarded client changes on staging only
+        run: |
+          python3 - <<'PY'
+          import base64,hashlib,json,zlib
+          from pathlib import Path
+          encoded=''.join(Path('tools/kompass_v13_payload.'+str(i)).read_text().strip() for i in range(3))
+          raw=zlib.decompress(base64.b64decode(encoded))
+          assert hashlib.sha256(raw).hexdigest()=='1737034fb76e4eff2f2543048a47072bd7dd7bdfdd45c86c97f0008059d9c8d9'
+          for name,change in json.loads(raw).items():
+            assert '..' not in name and (name.startswith('kompass/') or name=='tools/kompass_v13_ui.py')
+            p=Path(name)
+            if 'new' in change:
+              text=change['new']
+              if p.exists():
+                assert p.read_text()==text, name
+                continue
+            else:
+              text=p.read_text()
+              digest=hashlib.sha256(text.encode()).hexdigest()
+              if digest==change['newSha256']:continue
+              assert digest==change['baseSha256'],name
+              for start,end,replacement in reversed(change['edits']):text=text[:start]+replacement+text[end:]
+              assert hashlib.sha256(text.encode()).hexdigest()==change['newSha256'],name
+            p.parent.mkdir(parents=True,exist_ok=True);p.write_text(text)
+            print('Applied',name)
+          PY
+      - name: Apply reviewed follow-up corrections when present
+        run: |
+          if test -f tools/kompass_v13_fix.py; then python3 tools/kompass_v13_fix.py; fi
+      - name: Syntax and existing calculation tests
+        run: |
+          for file in kompass/*.js; do node --check "$file"; done
+          node kompass/tests/core.test.js
+          node kompass/tests/protein-overview.test.js
+          node kompass/tests/sync-core.test.js
+      - name: Prepare Chromium integration test environment
+        run: |
+          python3 -m pip install playwright
+          python3 -m playwright install --with-deps chromium
+      - name: Test actual UI with synthetic private API and real browser storage
+        run: python3 tools/kompass_v13_ui.py
+      - name: Preserve tested source on the review branch only
+        run: |
+          git config user.name 'Kompass verifier'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add kompass/ tools/kompass_v13_ui.py
+          git diff --cached --quiet || git commit -m 'Apply verified shared catalogue and reliable save changes'
+          git push origin HEAD:kompass-shared-sync-v13
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kompass-v13-source-and-checks
+          path: |
+            kompass/
+            test-output/
+          retention-days: 7
