@@ -1,0 +1,50 @@
+name: Nutrition reference data
+on:
+  push:
+    branches: [nutrition-webapp-v01]
+    paths: ['.github/workflows/nutrition-data.yml']
+permissions:
+  contents: read
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Download public official food database
+        run: |
+          mkdir -p nutrition-data
+          curl --fail --location --retry 2 --max-time 90 'https://naehrwertdaten.ch/wp-content/uploads/2026/07/Schweizer_Nahrwertdatenbank.xlsx' -o nutrition-data/swiss-official.xlsx
+      - name: Inspect workbook and preserve raw rows
+        run: |
+          python - <<'PY'
+          import json, zipfile, xml.etree.ElementTree as E, pathlib, hashlib
+          p=pathlib.Path('nutrition-data/swiss-official.xlsx')
+          ns={'m':'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}
+          sheets={}
+          with zipfile.ZipFile(p) as z:
+            strings=[]
+            if 'xl/sharedStrings.xml' in z.namelist():
+              for si in E.fromstring(z.read('xl/sharedStrings.xml')).findall('m:si',ns):
+                strings.append(''.join(si.itertext()))
+            for filename in z.namelist():
+              if not filename.startswith('xl/worksheets/sheet') or not filename.endswith('.xml'): continue
+              rows=[]
+              for row in E.fromstring(z.read(filename)).findall('.//m:sheetData/m:row',ns):
+                cells={}
+                for c in row.findall('m:c',ns):
+                  v=c.find('m:v',ns); val=v.text if v is not None else None
+                  if c.get('t')=='s' and val is not None: val=strings[int(val)]
+                  if c.get('t')=='inlineStr': val=''.join(c.find('m:is',ns).itertext())
+                  cells[c.get('r')]=val
+                rows.append(cells)
+              sheets[filename]=rows
+          pathlib.Path('nutrition-data/raw-rows.json').write_text(json.dumps(sheets,ensure_ascii=False))
+          report={'source':'https://naehrwertdaten.ch/de/downloads/','sha256':hashlib.sha256(p.read_bytes()).hexdigest(),'sheets':{k:{'rows':len(v),'preview':v[:8]} for k,v in sheets.items()}}
+          pathlib.Path('nutrition-data/report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
+          print(json.dumps(report,ensure_ascii=False))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: swiss-food-reference-data
+          path: nutrition-data
+          retention-days: 7
