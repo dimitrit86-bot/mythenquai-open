@@ -12,8 +12,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Apply reviewed source bundle
-        run: python3 tools/apply_nk13.py
+      - name: Apply reviewed source bundle and browser fixture correction
+        run: |
+          python3 tools/apply_nk13.py
+          python3 tools/nk13_followup.py
       - name: JavaScript syntax and calculation regressions
         run: |
           for f in kompass/*.js; do node --check "$f"; done
@@ -21,6 +23,23 @@ jobs:
           node kompass/tests/protein-overview.test.js
           node kompass/tests/sync-merge.test.js
           node kompass/tests/library-api.test.js
+      - name: Published private-library endpoint rejects unauthorized requests
+        run: |
+          mkdir -p test-output
+          python3 - <<'PY'
+          import json,urllib.request,urllib.error
+          url='https://wpmyuzpcraduhaybjvmb.supabase.co/functions/v1/nutrient-library'
+          cases=[('no session',{},401),('invalid session',{'x-nk-session':'f'*64},401),('foreign origin',{'Origin':'https://example.com'},403)]
+          report=[]
+          for name,headers,expected in cases:
+            req=urllib.request.Request(url,b'{"action":"list"}',headers={'Content-Type':'application/json',**headers},method='POST')
+            try:
+              with urllib.request.urlopen(req,timeout=30) as r:status=r.status
+            except urllib.error.HTTPError as e:status=e.code
+            assert status==expected,(name,status)
+            report.append({'test':name,'status':status});print('PASS',name,status)
+          open('test-output/live-authorization.json','w').write(json.dumps(report,indent=2))
+          PY
       - name: Prepare original source for reproducing reported error
         run: |
           mkdir -p original test-output
