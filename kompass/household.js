@@ -20,17 +20,39 @@ async function cacheState(){
  cacheJob=(async()=>{const iv=crypto.getRandomValues(new Uint8Array(12));const cipher=await crypto.subtle.encrypt({name:'AES-GCM',iv},cryptoKey,new TextEncoder().encode(JSON.stringify(record)));if(seq===cacheSeq)safeStore(localStorage,CACHE,JSON.stringify({iv:b64(iv),data:b64(new Uint8Array(cipher))}));})();return cacheJob;
 }
 async function readCache(){const s=localStorage.getItem(CACHE);if(!s)return null;try{const c=JSON.parse(s);return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:bytes(c.iv)},cryptoKey,bytes(c.data))));}catch{throw Error('Die lokale Sicherung konnte nicht entschlüsselt werden. Sie bleibt unverändert.');}}
+async function acknowledge(captured,revision){
+ current.revision=revision;pending=raw!==captured;blocked=false;
+ try{await cacheState();setStatus(pending?'Weitere Änderungen …':'Synchronisiert');}
+ catch{setStatus(pending?'Neue Änderungen noch nicht lokal gesichert · App offen lassen':'Synchronisiert · lokale Offline-Sicherung nicht verfügbar');}
+}
 async function flush(){
- clearTimeout(timer);if(busy)return busy;if(blocked)throw Error('Es besteht ein Versionskonflikt. Bitte die lokale Fassung sichern und die Serverfassung laden.');
- busy=(async()=>{while(pending&&current){const captured=raw,rev=current.revision;setStatus('Wird synchronisiert …');try{const r=await api('save',{id:current.id,revision:rev,state:JSON.parse(captured)});current.revision=r.revision;pending=raw!==captured;await cacheState();setStatus(pending?'Weitere Änderungen …':'Synchronisiert');}catch(e){if(e.conflict){blocked=true;setStatus('Versionskonflikt · bitte prüfen');}else setStatus(e.status===401?'Erneut anmelden · Änderungen lokal gesichert':'Offline / nicht synchronisiert');await cacheState().catch(()=>setStatus('Nicht gesichert! Bitte exportieren.'));if(e.status===401){showGate('login','Sitzung abgelaufen. Bitte erneut anmelden. Ungesendete Änderungen bleiben verschlüsselt erhalten.');}throw e;}}})();
+ clearTimeout(timer);if(busy)return busy;if(blocked)throw Error('Unterschiedliche Datenstände. Bitte über «Profile & Sync» die lokale Fassung sichern. Nicht den Browserspeicher löschen.');
+ busy=(async()=>{while(pending&&current){const captured=raw,rev=current.revision;setStatus('Wird synchronisiert …');
+  try{const r=await api('save',{id:current.id,revision:rev,state:JSON.parse(captured)});await acknowledge(captured,r.revision);}
+  catch(e){
+   if(e.conflict){
+    // A response may have been lost after a successful save. Never infer success
+    // from a revision alone: compare the complete validated payload first.
+    try{const server=(await api('get',{id:current.id})).profile;
+     if(window.NK_SAVE_GUARD.sameState(JSON.parse(captured),server.state)){
+      await acknowledge(captured,server.revision);continue;
+     }
+    }catch{/* Keep the original pending copy; no blind overwrite or merge. */}
+    blocked=true;setStatus('Unterschiedliche Datenstände · Fassungen prüfen');
+   }else setStatus(e.status===401?'Erneut anmelden · Änderungen noch nicht synchronisiert':'Offline / nicht synchronisiert');
+   await cacheState().catch(()=>setStatus('Nicht lokal gesichert! Bitte exportieren und App offen lassen.'));
+   if(e.status===401)showGate('login','Sitzung abgelaufen. Bitte erneut anmelden. Ungesendete Änderungen werden beibehalten.');
+   throw e;
+  }
+ }})();
  try{await busy;}finally{busy=null;}return true;
 }
-function queue(value){if(!auth||!current)throw Error('Bitte zuerst anmelden und ein Profil wählen.');if(blocked)throw Error('Versionskonflikt: Bitte über das Profilmenü die Fassungen prüfen.');if(value.length>3900000)throw Error('Profil zu gross. Bitte alte Daten exportieren.');raw=value;pending=true;setStatus('Wird gespeichert …');cacheState().then(()=>{if(pending&&!blocked)setStatus('Lokal gesichert · Synchronisierung …');}).catch(()=>setStatus('Lokale Sicherung fehlgeschlagen! Bitte exportieren.'));clearTimeout(timer);timer=setTimeout(()=>flush().catch(()=>{}),500);}
+function queue(value){if(!auth||!current)throw Error('Bitte zuerst anmelden und ein Profil wählen.');if(blocked)throw Error('Unterschiedliche Datenstände: Bitte «Fassungen prüfen & sichern» öffnen. Die vorhandenen Einträge wurden nicht überschrieben.');if(value.length>3900000)throw Error('Profil zu gross. Bitte alte Daten exportieren.');raw=value;pending=true;setStatus('Wird gespeichert …');cacheState().then(()=>{if(pending&&!blocked)setStatus('Lokal gesichert · Synchronisierung …');}).catch(()=>setStatus('Lokale Sicherung fehlgeschlagen! Bitte exportieren.'));clearTimeout(timer);timer=setTimeout(()=>flush().catch(()=>{}),500);}
 window.NK_STORE={getItem:()=>raw,setItem:(k,v)=>queue(String(v)),removeItem:()=>queue(JSON.stringify(window.NK.initial()))};
 function download(name,text,type='application/json'){const u=URL.createObjectURL(new Blob([text],{type})),a=document.createElement('a');a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),10000);}
 function showGate(mode='login',message=''){
  gate.hidden=false;$('#app').hidden=true;
- gate.innerHTML=`<div class="gate-card"><div class="gate-symbol">N<span>+</span></div><p class="eyebrow">DEIN PRIVATER NÄHRSTOFF-KOMPASS</p><h1>${mode==='setup'?'Euren Bereich aktivieren.':'Willkommen zurück.'}</h1><p class="sub">${mode==='setup'?'Nur mit deinem persönlichen Aktivierungslink. Danach meldet ihr euch mit eurem gemeinsamen Passwort an.':'Eure Gerichte, eure Routinen. Ein gemeinsamer Zugang – getrennte persönliche Profile.'}</p><form id="gate-form"><div class="field"><label for="gate-password">${mode==='setup'?'Gemeinsames Passwort festlegen':'Passwort'}</label><input id="gate-password" type="password" required minlength="4" maxlength="72" autocomplete="${mode==='setup'?'new-password':'current-password'}"></div>${mode==='setup'?'<div class="field"><label for="gate-confirm">Passwort wiederholen</label><input id="gate-confirm" type="password" required autocomplete="new-password"></div><div class="form-grid"><div class="field"><label for="first-name">Erstes Profil</label><input id="first-name" value="Patricia" maxlength="60" required></div><div class="field"><label for="second-name">Zweites Profil</label><input id="second-name" value="Dimitri" maxlength="60" required></div></div><p class="small">Eine längere Passphrase ist deutlich schwerer zu erraten als eine vierstellige PIN. Das Passwort kann später im Profilmenü geändert werden.</p>':'<label class="check"><input id="remember-session" type="checkbox"> Auf diesem privaten Gerät 7 Tage angemeldet bleiben</label>'}<p id="gate-error" class="error" role="alert">${E(message)}</p><button class="button wide" type="submit">${mode==='setup'?'Privaten Bereich aktivieren':'Anmelden'}</button></form><p class="tiny spaced">Persönliche Einträge werden geschützt bei Supabase gespeichert, nicht öffentlich auf GitHub. Fotos werden lokal auf deinem Gerät ausgelesen. Wer das gemeinsame Passwort kennt, kann alle Haushaltsprofile öffnen.</p><button type="button" class="muted-link" data-nk="install">Web-App installieren</button><span class="tiny"> · Version 1.0.0</span></div>`;
+ gate.innerHTML=`<div class="gate-card"><div class="gate-symbol">N<span>+</span></div><p class="eyebrow">DEIN PRIVATER NÄHRSTOFF-KOMPASS</p><h1>${mode==='setup'?'Euren Bereich aktivieren.':'Willkommen zurück.'}</h1><p class="sub">${mode==='setup'?'Nur mit deinem persönlichen Aktivierungslink. Danach meldet ihr euch mit eurem gemeinsamen Passwort an.':'Eure Gerichte, eure Routinen. Ein gemeinsamer Zugang – getrennte persönliche Profile.'}</p><form id="gate-form"><div class="field"><label for="gate-password">${mode==='setup'?'Gemeinsames Passwort festlegen':'Passwort'}</label><input id="gate-password" type="password" required minlength="4" maxlength="72" autocomplete="${mode==='setup'?'new-password':'current-password'}"></div>${mode==='setup'?'<div class="field"><label for="gate-confirm">Passwort wiederholen</label><input id="gate-confirm" type="password" required autocomplete="new-password"></div><div class="form-grid"><div class="field"><label for="first-name">Erstes Profil</label><input id="first-name" value="Patricia" maxlength="60" required></div><div class="field"><label for="second-name">Zweites Profil</label><input id="second-name" value="Dimitri" maxlength="60" required></div></div><p class="small">Eine längere Passphrase ist deutlich schwerer zu erraten als eine vierstellige PIN. Das Passwort kann später im Profilmenü geändert werden.</p>':'<label class="check"><input id="remember-session" type="checkbox"> Auf diesem privaten Gerät 7 Tage angemeldet bleiben</label>'}<p id="gate-error" class="error" role="alert">${E(message)}</p><button class="button wide" type="submit">${mode==='setup'?'Privaten Bereich aktivieren':'Anmelden'}</button></form><p class="tiny spaced">Persönliche Einträge werden geschützt bei Supabase gespeichert, nicht öffentlich auf GitHub. Fotos werden lokal auf deinem Gerät ausgelesen. Wer das gemeinsame Passwort kennt, kann alle Haushaltsprofile öffnen.</p><button type="button" class="muted-link" data-nk="install">Web-App installieren</button><span class="tiny"> · Version 1.2.2</span></div>`;
  $('#gate-form').addEventListener('submit',async e=>{e.preventDefault();e.stopPropagation();const b=e.currentTarget.querySelector('button[type=submit]');b.disabled=true;$('#gate-error').textContent='';const password=$('#gate-password').value;try{
   if(mode==='setup'){if(password!==$('#gate-confirm').value)throw Error('Die Passwörter stimmen nicht überein.');await api('setup',{activation,password,names:[$('#first-name').value.trim(),$('#second-name').value.trim()]});activation=null;showGate('login','Aktiviert. Bitte mit eurem Passwort anmelden.');return;}
   const remember=$('#remember-session').checked,r=await api('login',{password,remember});auth={token:r.token,expires:r.expires};const k=await api('key',{},BASE+'nutrient-device-key');auth.key=k.key;cryptoKey=await importKey(k.key);saveSession(remember);await afterLogin();
@@ -40,14 +62,24 @@ async function afterLogin(){
  profiles=(await api('profiles')).profiles;
  let cached;try{cached=await readCache();}catch(e){showGate('login',e.message);return;}
  if(cached?.pending&&profiles.some(p=>p.id===cached.id)){
-  const server=(await api('get',{id:cached.id})).profile;current={...server,revision:cached.revision};raw=cached.raw;pending=true;blocked=server.revision!==cached.revision;await openApp();
-  if(blocked){setStatus('Versionskonflikt · lokale Fassung erhalten');manager();}else flush().catch(()=>{});return;
+  const server=(await api('get',{id:cached.id})).profile;
+  const keys=window.NK_DATA.nutrients.map(n=>n.key);
+  const localState=window.NK.validateState(JSON.parse(cached.raw),keys);
+  const serverState=window.NK.validateState(server.state,keys);
+  const alreadySaved=window.NK_SAVE_GUARD.sameState(localState,serverState);
+  current={...server,revision:alreadySaved?server.revision:cached.revision};
+  raw=JSON.stringify(alreadySaved?serverState:localState);pending=!alreadySaved;
+  blocked=pending&&server.revision!==cached.revision;
+  await cacheState().catch(()=>{});await openApp();
+  if(blocked){setStatus('Unterschiedliche Datenstände · lokale Fassung erhalten');manager();}
+  else if(pending)flush().catch(()=>{});
+  return;
  }
  if(current&&pending){await flush();return;}
  const id=localStorage.getItem(LAST);if(profiles.length===1)await choose(profiles[0].id);else if(id&&profiles.some(p=>p.id===id))await choose(id);else manager(true);
 }
 async function openApp(){
- gate.hidden=true;$('#app').hidden=false;if(!started){await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='app.js';s.onload=resolve;s.onerror=()=>reject(Error('App konnte nicht geladen werden. Bitte erneut laden.'));document.body.append(s);});started=true;}else window.NK_APP.loadState(JSON.parse(raw));
+ gate.hidden=true;$('#app').hidden=false;if(!started){await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='app.js?v=1.2.2';s.onload=resolve;s.onerror=()=>reject(Error('App konnte nicht geladen werden. Bitte erneut laden.'));document.body.append(s);});started=true;}else window.NK_APP.loadState(JSON.parse(raw));
  setStatus(blocked?'Versionskonflikt · bitte prüfen':pending?'Noch nicht synchronisiert':'Synchronisiert');
 }
 async function choose(id){
@@ -57,7 +89,7 @@ async function choose(id){
 }
 function manager(first=false,message=''){
  if(!auth){showGate();return;}
- dlg.innerHTML=`<div class="modal-head"><h2>${first?'Wer nutzt den Kompass?':'Euer privater Bereich'}</h2>${first?'':'<button type="button" class="icon-btn" data-nk="close" aria-label="Schliessen">×</button>'}</div><p class="small">Getrennte Einträge und Rezepte, gemeinsames Passwort. Die Profile sind keine voneinander abgeschotteten Konten.</p><div class="profile-grid">${profiles.map(p=>`<button type="button" class="profile-choice ${current?.id===p.id?'selected':''}" data-nk="choose" data-id="${p.id}"><span class="avatar">${E(p.name.slice(0,1).toUpperCase())}</span><b>${E(p.name)}</b><small>${current?.id===p.id?'Aktuelles Profil':'Profil öffnen'}</small></button>`).join('')}</div><p class="small" data-nk-status>${E(status)}</p>${blocked?'<div class="notice"><b>Änderung auf einem anderen Gerät erkannt.</b><p>Die lokale Fassung wurde nicht überschrieben. Sichere sie zuerst. Danach kannst du die Serverfassung laden und die Änderungen anhand der Sicherung übernehmen.</p><button class="button secondary" data-nk="backup-current">Lokale Fassung sichern</button> <button class="button" data-nk="reload-server">Serverfassung laden</button></div>':''}<p class="error" id="household-error">${E(message)}</p><div class="actions wrap">${current?'<button class="button secondary" data-nk="sync">Jetzt synchronisieren</button><button class="button secondary" data-nk="rename">Profil umbenennen</button>':''}<button class="button secondary" data-nk="add">Profil hinzufügen</button><button class="button secondary" data-nk="backup-all">Alle Profile sichern</button><label class="button secondary" for="household-import">Haushalt wiederherstellen<input id="household-import" type="file" accept=".json,application/json" hidden></label><button class="button secondary" data-nk="password">Passwort ändern</button><button class="button secondary" data-nk="install">Installieren</button>${current?'<button class="button ghost" data-nk="delete">Aktuelles Profil löschen</button>':''}<button class="button ghost" data-nk="logout">Abmelden und Gerät sperren</button></div>`;
+ dlg.innerHTML=`<div class="modal-head"><h2>${first?'Wer nutzt den Kompass?':'Euer privater Bereich'}</h2>${first?'':'<button type="button" class="icon-btn" data-nk="close" aria-label="Schliessen">×</button>'}</div><p class="small">Getrennte Einträge und Rezepte, gemeinsames Passwort. Die Profile sind keine voneinander abgeschotteten Konten.</p><div class="profile-grid">${profiles.map(p=>`<button type="button" class="profile-choice ${current?.id===p.id?'selected':''}" data-nk="choose" data-id="${p.id}"><span class="avatar">${E(p.name.slice(0,1).toUpperCase())}</span><b>${E(p.name)}</b><small>${current?.id===p.id?'Aktuelles Profil':'Profil öffnen'}</small></button>`).join('')}</div><p class="small" data-nk-status>${E(status)}</p>${blocked?'<div class="notice"><b>Unterschiedliche Datenstände erkannt.</b><p>Keine Fassung wurde überschrieben. Sichere die lokale Fassung als zusätzliches Profil, um damit weiterzuarbeiten. Das ursprüngliche Serverprofil bleibt erhalten. Alternativ kannst du zuerst eine Datei exportieren.</p><button class="button" data-nk="preserve-local">Lokale Fassung als neues Profil sichern</button><button class="button secondary" data-nk="backup-current">Lokale Fassung sichern</button> <button class="button" data-nk="reload-server">Serverfassung laden</button></div>':''}<p class="error" id="household-error">${E(message)}</p><div class="actions wrap">${current?'<button class="button secondary" data-nk="sync">Jetzt synchronisieren</button><button class="button secondary" data-nk="rename">Profil umbenennen</button>':''}<button class="button secondary" data-nk="add">Profil hinzufügen</button><button class="button secondary" data-nk="backup-all">Alle Profile sichern</button><label class="button secondary" for="household-import">Haushalt wiederherstellen<input id="household-import" type="file" accept=".json,application/json" hidden></label><button class="button secondary" data-nk="password">Passwort ändern</button><button class="button secondary" data-nk="install">Installieren</button>${current?'<button class="button ghost" data-nk="delete">Aktuelles Profil löschen</button>':''}<button class="button ghost" data-nk="logout">Abmelden und Gerät sperren</button></div>`;
  if(!dlg.open)dlg.showModal();
  const imp=$('#household-import');if(imp)imp.onchange=restoreHousehold;
 }
@@ -70,6 +102,25 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-nk]'
  if(a==='close'){dlg.close();return;}
  if(a==='choose'){await choose(b.dataset.id);return;}
  if(a==='sync'){await flush();manager(false,'Synchronisiert.');return;}
+ if(a==='preserve-local'){
+  if(!current||!raw)throw Error('Keine lokale Fassung vorhanden.');
+  if(window.NK_APP&&!window.NK_APP.canSwitch())return;
+  if(!confirm('Die gespeicherte lokale Fassung als zusätzliches Profil sichern und darin weiterarbeiten? Die ursprüngliche Serverfassung bleibt unverändert. Noch nicht übernommene Formulareingaben sind nicht Teil dieser Sicherung.'))return;
+  b.disabled=true;
+  try{
+   const state=window.NK.validateState(JSON.parse(raw),window.NK_DATA.nutrients.map(n=>n.key));
+   if((await api('profiles')).profiles.length>=8)throw Error('Maximal 8 Profile. Bitte die lokale Fassung als Datei sichern; es wurde nichts überschrieben.');
+   const name=current.name.slice(0,34)+' · lokale Sicherung';
+   const created=(await api('create',{name})).profile;
+   const saved=await api('save',{id:created.id,revision:created.revision,state});
+   // Only release the blocked copy AFTER the server confirms the new backup.
+   current={id:created.id,name:created.name,revision:saved.revision};raw=JSON.stringify(state);
+   pending=false;blocked=false;profiles=[...profiles.filter(p=>p.id!==created.id),current];
+   let localSaved=true;try{safeStore(localStorage,LAST,current.id);await cacheState();}catch{localSaved=false;}
+   dlg.close();await openApp();setStatus(localSaved?'Lokale Fassung als zusätzliches Profil gesichert':'Neues Profil auf dem Server gesichert · lokale Offline-Sicherung nicht verfügbar');
+  }finally{b.disabled=false;}
+  return;
+ }
  if(a==='backup-current'){download('Kompass-lokale-Fassung.json',raw||'{}');return;}
  if(a==='reload-server'){if(!confirm('Lokale Fassung zuerst gesichert? Ungesendete Änderungen werden durch die Serverfassung ersetzt.'))return;pending=false;blocked=false;await choose(current.id);return;}
  if(a==='add'){const name=prompt('Name des neuen Profils:');if(!name?.trim())return;await flush();const r=await api('create',{name});profiles=(await api('profiles')).profiles;await choose(r.profile.id);return;}
@@ -81,7 +132,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-nk]'
  }catch(err){const out=$('#household-error');if(out)out.textContent=err.message;else alert(err.message);}});
 window.addEventListener('online',()=>{if(auth&&pending&&!blocked)flush().catch(()=>{});});
 window.addEventListener('beforeunload',e=>{if(pending){e.preventDefault();e.returnValue='Änderungen sind noch nicht synchronisiert.';}});
-window.NK_HOUSEHOLD={api,flush,manager,get name(){return current?.name||'';},get status(){return status;},get pending(){return pending;},install};
+window.NK_HOUSEHOLD={api,flush,manager,get name(){return current?.name||'';},get status(){return status;},get pending(){return pending;},get blocked(){return blocked;},install};
 async function boot(){
  if(activation){showGate('setup');return;}
  try{const saved=sessionStorage.getItem(SESSION)||localStorage.getItem(SESSION);if(saved)auth=JSON.parse(saved);if(auth&&Date.parse(auth.expires)>Date.now()){

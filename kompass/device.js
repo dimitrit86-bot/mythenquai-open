@@ -1,6 +1,6 @@
 /* Device-local startup preference and safe, user-initiated PWA installation/update. */
 (function(){'use strict';
-const VERSION='1.2.1',KEY='nk:device-start-profile:2';
+const VERSION='1.2.2',KEY='nk:device-start-profile:2';
 const $=s=>document.querySelector(s),E=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let promptEvent=null,updating=false,reloadRequested=false,touchedForms=new WeakSet();
 function read(){try{const p=JSON.parse(localStorage.getItem(KEY)||'null');if(p&&['ask','last','fixed'].includes(p.mode)&&(!p.id||typeof p.id==='string'))return p;}catch{}return {mode:'last'};}

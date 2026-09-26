@@ -13,7 +13,7 @@ const numField=(id,label,value='',help='',attrs='')=>`<div class="field"><label 
 const options=(items,value)=>items.map(([v,t])=>`<option value="${esc(v)}" ${v===value?'selected':''}>${esc(t)}</option>`).join('');
 const sourceFood=f=>({id:f.id,name:f.name,synonyms:f.synonyms||'',category:f.category||'',density:f.density??null,basis:f.basis,source:f.source||'Eigene Angaben',kind:f.kind||'custom',n:copy(f.n),q:copy(f.q||{})});
 const food=id=>state.foods.find(f=>f.id===id)||byId.get(id);
-function persist(next){if(storageBlocked)throw Error(storageProblem||'Speicher gesperrt: Bitte vorhandene Rohdaten sichern oder die Seite neu laden.');try{(window.NK_STORE||localStorage).setItem(KEY,JSON.stringify(next));}catch(e){storageProblem='Speichern fehlgeschlagen: Der Browserspeicher ist voll oder nicht verfügbar. Bitte bestehende Daten im Profil sichern.';throw Error(storageProblem);}state=next;storageProblem='';}
+function persist(next){if(storageBlocked)throw Error(storageProblem||'Speicher gesperrt: Bitte vorhandene Rohdaten sichern oder die Seite neu laden.');try{(window.NK_STORE||localStorage).setItem(KEY,JSON.stringify(next));}catch(e){storageProblem=window.NK_SAVE_GUARD.message(e);throw Error(storageProblem);}state=next;storageProblem='';}
 function change(fn){const next=copy(state);fn(next);persist(next);}
 function notify(text,allowUndo=false){const t=$('#toast');t.innerHTML=`<span>${esc(text)}</span>${allowUndo?'<button data-action="undo">Rückgängig</button>':''}`;t.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('visible'),allowUndo?12000:4800);}
 function removeWithUndo(fn,text){const old=copy(state);change(fn);undo=old;render();notify(text,true);}
@@ -112,7 +112,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-action]');
  else if(a==='delete-all'){if(confirm('Alle Einträge, Gerichte und Einstellungen dieses Profils auch auf dem Server leeren? Andere Profile bleiben erhalten. Vorher eine Sicherung exportieren.')){(window.NK_STORE||localStorage).removeItem(KEY);storageBlocked=false;storageProblem='';state=C.initial();draft=null;dirty=false;undo=null;render();notify('Persönliche Daten auf diesem Gerät gelöscht.');}}
  else if(a==='install'&&installPrompt){installPrompt.prompt();installPrompt=null;}
  }catch(error){showError(error.message);}});
-function showError(text){const el=modal?$('#modal-error'):route==='editor'?$('#recipe-error'):$('#profile-error');if(el)el.innerHTML=`<div class="error" role="alert">${esc(text)}</div>`;else notify(text);}
+function showError(text){const el=modal?$('#modal-error'):route==='editor'?$('#recipe-error'):$('#profile-error');if(el)el.innerHTML=`<div class="error" role="alert">${esc(text)}</div>${window.NK_HOUSEHOLD?.blocked?'<button type="button" class="button secondary" data-nk="manager">Fassungen prüfen & sichern</button>':''}`;else notify(text);}
 document.addEventListener('input',e=>{const el=e.target;try{
  if(el.id==='food-search'){search=el.value;renderSearchResults();}
  else if(el.id==='ingredient-search')renderIngredientResults();
