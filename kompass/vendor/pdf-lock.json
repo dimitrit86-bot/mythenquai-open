@@ -1,0 +1,17 @@
+{
+  "version": "4.2.1",
+  "files": [
+    {
+      "source": "https://raw.githubusercontent.com/parallax/jsPDF/v4.2.1/dist/jspdf.umd.min.js",
+      "path": "vendor/jspdf.umd.min.js",
+      "sha256": "e6551fcdc32f09d6853b2c5126d18d01d9447e0da618a41a11ebeee0f6c20d54",
+      "bytes": 420165
+    },
+    {
+      "source": "https://raw.githubusercontent.com/parallax/jsPDF/v4.2.1/LICENSE",
+      "path": "vendor/licenses/jspdf-4.2.1.txt",
+      "sha256": "dc388ec35ff463288cdde3588a36fd4ed12a45deff053243b37309acc9ef583b",
+      "bytes": 1142
+    }
+  ]
+}
