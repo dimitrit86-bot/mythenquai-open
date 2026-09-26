@@ -1,31 +1,32 @@
 {
   "version": "1.2.0",
-  "importedAt": "2026-09-26T15:04:31.878815+00:00",
+  "importedAt": "2026-09-26T15:09:06.660834+00:00",
   "source": "Open Food Facts public CSV export",
   "sourceUrl": "https://static.openfoodfacts.org/data/en.openfoodfacts.org.products.csv.gz",
   "sourceLastModified": "Sat, 26 Sep 2026 12:31:47 GMT",
   "license": "ODbL 1.0",
   "scanned": 4532767,
-  "count": 1865,
+  "count": 2590,
   "counts": {
     "Migros": 863,
-    "Coop": 723,
+    "Coop": 724,
     "Lidl": 204,
     "Aldi": 118,
-    "Alpro": 0
+    "Alpro": 730
   },
   "dietCounts": {
-    "vegan": 1517,
-    "vegetarisch": 348
+    "vegan": 1862,
+    "vegetarisch": 353,
+    "unknown": 375
   },
   "excluded": {
-    "out-of-scope": 18294,
-    "missing-core-nutrition": 121,
-    "missing-name": 91,
-    "invalid-barcode": 12,
+    "out-of-scope": 17387,
+    "missing-core-nutrition": 230,
+    "missing-name": 157,
+    "invalid-barcode": 19,
     "implausible-core-nutrition": 3
   },
-  "seconds": 121.4,
+  "seconds": 121.8,
   "coverage": "All matching export records with usable core nutrition; not a complete current retailer assortment. Barcode/pack variants remain separate.",
   "basis": "Confirm per 100 g/ml against the pack before first use."
 }

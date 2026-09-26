@@ -14,7 +14,7 @@ def finite(s):
   v=float(s);return v if math.isfinite(v) and v>=0 else None
  except (ValueError,TypeError):return None
 def transform(r):
- b=tags(r.get('brands_tags') or r.get('brands'));alpro='alpro' in b
+ b=tags(r.get('brands_tags'))|tags(r.get('brands'));alpro=any(x.split(':')[-1]=='alpro' for x in b)
  st=tags(r.get('stores_tags') or r.get('stores'));stores=[n for n in ('Migros','Coop','Lidl','Aldi') if any(x==n.lower() or x.startswith(n.lower()+'-') or x.endswith('-'+n.lower()) for x in st)]
  countries=tags(r.get('countries_tags'));labels=tags(r.get('labels_tags'))
  diet='vegan' if labels & {'en:vegan','en:european-vegetarian-union-vegan','en:vegan-society'} else 'vegetarisch' if labels & {'en:vegetarian','en:european-vegetarian-union-vegetarian'} else 'unknown'
