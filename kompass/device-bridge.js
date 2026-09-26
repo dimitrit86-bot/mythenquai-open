@@ -15,7 +15,6 @@ function enhance(){const H=window.NK_HOUSEHOLD,A=window.NK_APP,active=H?.name&&!
 document.addEventListener('click',e=>{const b=e.target.closest('[data-nk]');if(!b)return;
  if(b.dataset.nk==='install'){e.preventDefault();e.stopImmediatePropagation();D.install();}
  if(b.dataset.nk==='device-save'){e.preventDefault();e.stopImmediatePropagation();try{const v=dlg.querySelector('#device-profile-choice').value;D.save(v.startsWith('profile:')?{mode:'fixed',id:v.slice(8)}:{mode:v},profiles());let t=dlg.querySelector('#device-save-message');if(!t){t=document.createElement('p');t.id='device-save-message';t.className='small';b.after(t);}t.textContent='Startprofil auf diesem Gerät gespeichert. Der aktuelle Profilwechsel bleibt möglich.';}catch(err){alert(err.message);}}
- if(b.dataset.nk==='choose'&&D.hasUnsavedForm()&&!confirm('Ungespeicherte Formulareingaben verwerfen und Profil wechseln?')){e.preventDefault();e.stopImmediatePropagation();}
 },true);
 document.addEventListener('input',e=>{if(e.target.closest('#main')&&document.getElementById('recipe-name'))editorTouched=true;});
 let queued=false;const obs=new MutationObserver(()=>{if(!queued){queued=true;queueMicrotask(()=>{queued=false;if(!document.getElementById('recipe-name'))editorTouched=false;enhance();});}});obs.observe(root,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden']});obs.observe(dlg,{subtree:true,childList:true});enhance();

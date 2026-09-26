@@ -1,0 +1,22 @@
+'use strict';
+const assert=require('node:assert/strict'),C=require('../core.js'),M=require('../sync-merge.js');let passed=0;
+const clone=C.clone,base=C.initial(),item=(id,name='Test')=>({id,name});
+function t(name,fn){fn();passed++;console.log('PASS',name);}
+t('independent additions from two devices merge',()=>{const l=clone(base),r=clone(base);l.entries=[item('a')];r.entries=[item('b')];const x=M.merge(base,l,r);assert.equal(x.conflicts.length,0);assert.deepEqual(x.state.entries.map(x=>x.id).sort(),['a','b']);});
+t('same successful save retried never duplicates',()=>{const l=clone(base);l.entries=[item('a')];assert.equal(M.merge(base,l,clone(l)).state.entries.length,1);});
+t('independent profile fields merge',()=>{const l=clone(base),r=clone(base);l.profile.weight=70;r.profile.age=40;const x=M.merge(base,l,r);assert.equal(x.conflicts.length,0);assert.equal(x.state.profile.weight,70);assert.equal(x.state.profile.age,40);});
+t('independent personal targets merge',()=>{const l=clone(base),r=clone(base);l.profile.manual.protein=80;r.profile.manual.energy=2000;const x=M.merge(base,l,r);assert.equal(x.conflicts.length,0);assert.deepEqual(x.state.profile.manual,{protein:80,energy:2000});});
+t('conflicting values require explicit selection',()=>{const b=clone(base);b.entries=[item('a','Old')];const l=clone(b),r=clone(b);l.entries[0].name='Local';r.entries[0].name='Remote';const x=M.merge(b,l,r);assert.equal(x.conflicts.length,1);const choices={[x.conflicts[0].id]:'server'};assert.equal(M.merge(b,l,r,choices).state.entries[0].name,'Remote');});
+t('delete versus unmodified uses deletion',()=>{const b=clone(base);b.entries=[item('a')];const l=clone(b);l.entries=[];const x=M.merge(b,l,b);assert.equal(x.conflicts.length,0);assert.equal(x.state.entries.length,0);});
+t('delete versus edit is a conflict',()=>{const b=clone(base);b.entries=[item('a')];const l=clone(b),r=clone(b);l.entries=[];r.entries[0].name='Edit';assert.equal(M.merge(b,l,r).conflicts.length,1);});
+t('legacy pending cache preserves both new records',()=>{const l=clone(base),r=clone(base);l.entries=[item('a')];r.entries=[item('b')];const x=M.merge(null,l,r);assert.equal(x.legacy,true);assert.equal(x.conflicts.length,0);assert.equal(x.state.entries.length,2);});
+t('legacy same-ID disagreement is not overwritten',()=>{const l=clone(base),r=clone(base);l.foods=[item('a','L')];r.foods=[item('a','R')];assert.equal(M.merge(null,l,r).conflicts.length,1);});
+t('shared name is not an ID deduplication criterion',()=>{const l=clone(base),r=clone(base);l.entries=[item('a','Pringles')];r.entries=[item('b','Pringles')];assert.equal(M.merge(base,l,r).state.entries.length,2);});
+t('concurrent arrays remain independently mergeable',()=>{const l=clone(base),r=clone(base);l.foods=[item('a')];r.recipes=[item('b')];const x=M.merge(base,l,r);assert.equal(x.state.foods.length,1);assert.equal(x.state.recipes.length,1);});
+t('different days remain intact',()=>{const l=clone(base),r=clone(base);l.days['2026-09-25']={complete:true};r.days['2026-09-26']={complete:true};assert.equal(Object.keys(M.merge(base,l,r).state.days).length,2);});
+t('favorite removal is not restored by an unchanged remote',()=>{const b=clone(base);b.favorites=['a'];const l=clone(b);l.favorites=[];assert.deepEqual(M.merge(b,l,b).state.favorites,[]);});
+t('prototype keys are not merged',()=>{const l=clone(base),r=clone(base);l.profile=JSON.parse('{"__proto__":{"polluted":true}}');const x=M.merge(base,l,r);assert.equal({}.polluted,undefined);assert.equal(Object.hasOwn(x.state.profile,'__proto__'),false);});
+t('input snapshots remain immutable',()=>{const l=clone(base),r=clone(base),before=JSON.stringify([base,l,r]);M.merge(base,l,r);assert.equal(JSON.stringify([base,l,r]),before);});
+t('key ordering does not manufacture a conflict',()=>assert.equal(M.equal({a:1,b:2},{b:2,a:1}),true));
+t('duplicate IDs fail closed',()=>{const l=clone(base);l.entries=[item('a'),item('a')];assert.throws(()=>M.merge(base,l,base));});
+console.log('TOTAL MERGE TESTS',passed);

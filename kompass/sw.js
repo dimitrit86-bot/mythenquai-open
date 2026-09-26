@@ -1,7 +1,7 @@
 /* App-scoped static cache only. Private API responses are never cached. */
-const VERSION='1.2.1',CACHE='nk-kompass-'+VERSION;
-const scripts=['device.js','device-bridge.js','data.js','core.js','protein-overview.js','veggie-data.js','catalog.js','retail-data.js','retail.js','retail-ui.js','scanner.js','household.js'];
-const SHELL=['./','./index.html','./app.js','./manifest.webmanifest','./icon-192.png','./icon-512.png','./icon.svg','./style.css?v='+VERSION,'./device-catalog.css?v='+VERSION,'./protein-overview.css?v='+VERSION,...scripts.map(p=>'./'+p+'?v='+VERSION)];
+const VERSION='1.3.0',CACHE='nk-kompass-'+VERSION;
+const scripts=['device.js','device-bridge.js','data.js','core.js','protein-overview.js','veggie-data.js','catalog.js','retail-data.js','retail.js','retail-ui.js','scanner.js','sync-merge.js','shared-library.js','household.js','app.js'];
+const SHELL=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./icon.svg','./style.css?v='+VERSION,'./device-catalog.css?v='+VERSION,'./protein-overview.css?v='+VERSION,'./shared-library.css?v='+VERSION,...scripts.map(p=>'./'+p+'?v='+VERSION)];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL))));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('nk-kompass-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('message',e=>{if(e.data==='ACTIVATE_UPDATE')self.skipWaiting();});
