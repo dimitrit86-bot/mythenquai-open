@@ -1,0 +1,36 @@
+name: Check deployed Kompass product service authorization
+on:
+  push:
+    branches: [kompass-import-celebration-v14]
+    paths: [.github/workflows/kompass-v14-live-check.yml]
+permissions:
+  contents: read
+jobs:
+  authorization:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Public unauthenticated checks only
+        run: |
+          mkdir -p live-output
+          python3 - <<'PY'
+          import json,urllib.request,urllib.error
+          url='https://wpmyuzpcraduhaybjvmb.supabase.co/functions/v1/nutrient-product-lookup'
+          report=[]
+          for label,headers,expected in [('missing session',{},401),('invalid session',{'x-nk-session':'0'*64},401),('foreign origin',{'Origin':'https://example.invalid'},403)]:
+            req=urllib.request.Request(url,b'{"action":"lookup","input":"Redefine Flank Steak"}',headers={'Content-Type':'application/json',**headers},method='POST')
+            try:
+              with urllib.request.urlopen(req,timeout=30) as r:status=r.status;body=json.load(r)
+            except urllib.error.HTTPError as e:status=e.code;body=json.load(e)
+            assert status==expected,(label,status,body)
+            assert 'products' not in body and 'profiles' not in body
+            report.append({'check':label,'status':status});print('PASS',label,status)
+          open('live-output/authorization.json','w').write(json.dumps(report,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kompass-v14-live-access-checks
+          path: live-output/
+          retention-days: 7
