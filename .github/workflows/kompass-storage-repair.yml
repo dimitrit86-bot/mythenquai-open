@@ -1,0 +1,41 @@
+name: Verify Kompass storage repair
+on:
+  push:
+    branches: [kompass-storage-repair-122]
+    paths: [tools/kompass_patch_storage.py, kompass/save-guard.js, kompass/tests/save-guard.test.js, .github/workflows/kompass-storage-repair.yml]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply guarded patch only to the review branch
+        run: python3 tools/kompass_patch_storage.py
+      - name: Syntax and regression tests
+        run: |
+          set -e
+          for file in kompass/*.js; do node --check "$file"; done
+          node kompass/tests/core.test.js
+          node kompass/tests/protein-overview.test.js
+          node kompass/tests/save-guard.test.js
+      - name: Verify exact locally tested application hashes
+        run: |
+          test "$(git hash-object kompass/app.js)" = '9f8c1ce468802975e253349fc36e193795742b35'
+          test "$(git hash-object kompass/household.js)" = 'c20be1f022e09f4178956cd6f6f747e842584573'
+          test "$(git hash-object kompass/index.html)" = '47f949e2aca788be3aaa9058f1f01ddff6a16a30'
+          test "$(git hash-object kompass/device.js)" = '26a65b1a0122e8781721cf3900ecf5e35c1b5edd'
+          test "$(git hash-object kompass/sw.js)" = 'd49d2c95c7a0d1ba27cabb91197282f8a1e469a6'
+      - name: Commit verified code to review branch only
+        run: |
+          git config user.name 'Kompass repair verification'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add kompass/app.js kompass/household.js kompass/index.html kompass/device.js kompass/sw.js kompass/version.json
+          git diff --cached --quiet || git commit -m 'Apply verified storage repair and versioned app loading'
+          git push origin HEAD:kompass-storage-repair-122
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kompass-storage-repair-verified
+          path: kompass/
+          retention-days: 7

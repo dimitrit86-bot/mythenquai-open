@@ -1,0 +1,25 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const G=require('../save-guard.js'),C=require('../core.js');let count=0;
+function test(name,fn){fn();count++;console.log('PASS',name);}
+const initial=C.initial(),clone=x=>JSON.parse(JSON.stringify(x));
+test('equal states are recognised',()=>assert.equal(G.sameState(initial,clone(initial)),true));
+test('PostgreSQL object key order does not cause conflict',()=>{const b=Object.fromEntries(Object.entries(initial).reverse());b.profile=Object.fromEntries(Object.entries(b.profile).reverse());assert.equal(G.sameState(initial,b),true);});
+test('different profile values are not silently overwritten',()=>{const b=clone(initial);b.profile.age=41;assert.equal(G.sameState(initial,b),false);});
+test('different diary entries remain different',()=>{const b=clone(initial);b.entries=[{id:'other'}];assert.equal(G.sameState(initial,b),false);});
+test('different recipe versions remain different',()=>{const b=clone(initial);b.recipes=[{id:'recipe',version:2}];assert.equal(G.sameState(initial,b),false);});
+test('deletions are not silently restored',()=>{const a=clone(initial);a.foods=[{id:'food'}];assert.equal(G.sameState(a,initial),false);});
+test('array order is preserved',()=>{const a=clone(initial),b=clone(initial);a.recent=['a','b'];b.recent=['b','a'];assert.equal(G.sameState(a,b),false);});
+test('null and zero are distinct',()=>{const b=clone(initial);b.profile.age=0;assert.equal(G.sameState(initial,b),false);});
+test('invalid schema is not acknowledged',()=>assert.equal(G.sameState({schema:2},{schema:2}),false));
+test('absent payload is not acknowledged',()=>assert.equal(G.sameState(null,initial),false));
+test('conflict reason is not masked as storage full',()=>{const m=G.message(Error('Unterschiedliche Datenstände'));assert.match(m,/Unterschiedliche/);assert.doesNotMatch(m,/voll/);});
+test('quota exception has specific guidance',()=>assert.match(G.message({name:'QuotaExceededError'}),/Grenze erreicht/));
+test('denied storage has specific guidance',()=>assert.match(G.message({name:'SecurityError'}),/Speicherzugriff/));
+test('expired session message preserved',()=>assert.match(G.message(Error('Sitzung abgelaufen')),/Sitzung abgelaufen/));
+test('missing error has safe fallback',()=>assert.match(G.message(null),/Unbekannter Speicherfehler/));
+test('state comparison does not mutate input',()=>{const before=JSON.stringify(initial);G.sameState(initial,clone(initial));assert.equal(JSON.stringify(initial),before);});
+test('app code uses precise error handling',()=>{const s=fs.readFileSync(path.join(__dirname,'../app.js'),'utf8');assert.match(s,/NK_SAVE_GUARD.message\(e\)/);assert.doesNotMatch(s,/Speichern fehlgeschlagen: Der Browserspeicher ist voll/);});
+test('dynamic app entry is versioned',()=>assert.match(fs.readFileSync(path.join(__dirname,'../household.js'),'utf8'),/app\.js\?v=1\.2\.2/));
+test('loader and cache refer to existing assets',()=>{const root=path.join(__dirname,'..'),s=fs.readFileSync(path.join(root,'index.html'),'utf8');for(const m of s.matchAll(/(?:src|href)="([^"?]+\.(?:js|css))/g))assert.ok(fs.existsSync(path.join(root,m[1])),m[1]);assert.ok(s.indexOf('save-guard.js')<s.indexOf('household.js'));assert.match(fs.readFileSync(path.join(root,'sw.js'),'utf8'),/save-guard/);assert.equal(JSON.parse(fs.readFileSync(path.join(root,'version.json'),'utf8')).version,'1.2.2');});
+console.log('TOTAL SAVE GUARD TESTS',count);
