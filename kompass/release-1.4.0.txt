@@ -1,0 +1,6 @@
+Nährstoff-Kompass 1.4.0
+Verified application commit: 729fa743edd817510e921855cdd3984d90f48682
+Verification workflow: 36259965889
+126 unit checks; 27 Chromium and 27 WebKit UI checks passed with synthetic data.
+Stable URL: https://dimitrit86-bot.github.io/mythenquai-open/kompass/
+See UPDATE-1.4.0.md for functionality and Coop live-access limitations.
