@@ -1,0 +1,35 @@
+/* Screen/PDF parity checks. Synthetic records only, no network or private data. */
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs');
+global.window=global;require('../data.js');const C=require('../core.js'),R=require('../report-core.js'),V=require('../report-presentation.js');
+global.NK_REPORTS=R;global.NK_REPORT_PRESENTATION=V;global.jspdf=require('../vendor/jspdf.umd.min.js');require('../report-pdf.js');
+let passed=0;function check(name,fn){fn();passed++;console.log('PASS',name);}
+const s=C.initial();s.profile={...s.profile,age:40,sex:'m',weight:80,height:180,manual:{protein:100,vitC:100,calcium:1000,energy:2000,fat:60,carbs:250}};
+s.entries=[{id:'test-a',date:'2026-09-21',name:'Synthetic test food',kind:'food',meal:0,amountText:'100 g',n:Object.fromEntries(NK_DATA.nutrients.map(n=>[n.key,{value:({protein:100,vitC:120,calcium:600,energy:2000,fat:60,carbs:250})[n.key]??null,known:['protein','vitC','calcium','energy','fat','carbs'].includes(n.key)?1:0,total:1,missing:['Synthetic test food']}]))}];s.days={'2026-09-21':{complete:true}};
+const r=R.build(s,NK_DATA.nutrients,{frequency:'weekly',anchor:'2026-09-21',today:'2026-09-26'}),rows=Object.fromEntries(r.rows.map(x=>[x.key,x]));
+const snap=V.snapshot(r,'Musterprofil',{createdAt:'2026-09-26T12:00:00Z'});
+check('Met state uses existing complete-data rules',()=>assert.equal(V.tone(rows.protein),'met'));
+check('Known below target remains distinct',()=>assert.equal(V.tone(rows.calcium),'deviation'));
+check('Missing B12 is never a failed goal',()=>assert.equal(V.tone(rows.vitB12),'neutral'));
+check('Unknown displays dash instead of zero',()=>assert.equal(V.amount(rows.vitB12),'—'));
+check('Incompatible folate has no percent',()=>assert.equal(V.percent(rows.folate),'—'));
+check('Counts include all and only report rows',()=>{const n=V.stats(r.rows);assert.equal(n.total,n.met+n.deviation+n.open);assert.equal(n.total,NK_DATA.nutrients.length);});
+check('Snapshot does not share mutable report arrays',()=>{const x=V.snapshot(r,'Test');x.report.rows[0].average=999;assert.notEqual(r.rows[0].average,999);});
+check('File names cannot contain path escapes',()=>assert.ok(!/[\/\\:*?<>|]/.test(V.filename(V.snapshot(r,'../Test:*?')))));
+check('Date bounds remain in export file name',()=>assert.ok(V.filename(snap).includes('2026-09-21-2026-09-27')));
+check('Native PDF export normalizes alpha and math glyphs without numeric changes',()=>assert.equal(NK_REPORT_PDF.clean('≥ 2,5 µg · α'),'mind.  2,5 µg · Alpha'));
+const before=JSON.stringify([s,r]);
+const compact=NK_REPORT_PDF.create(snap,{detail:false}),full=NK_REPORT_PDF.create(snap,{detail:true});
+check('Compact is exactly one page',()=>assert.equal(compact.pages,1));
+check('Complete PDF contains every nutrient once in table',()=>assert.equal(new Set(full.layout.map(x=>x.key)).size,r.rows.length));
+check('Rows stay inside the page body',()=>assert.ok(full.layout.every(x=>x.y>=120&&x.y+x.height<786)));
+check('PDF export is non-mutating',()=>assert.equal(JSON.stringify([s,r]),before));
+check('PDF has correct type and non-empty bytes',()=>assert.ok(full.blob.type==='application/pdf'&&full.blob.size>5000));
+check('Repeated exports keep identical nutrition model',()=>assert.equal(JSON.stringify(NK_REPORT_PDF.create(snap).snapshot.report),JSON.stringify(r)));
+check('Empty reports still export without fake goals',()=>{const empty=R.build(C.initial(),NK_DATA.nutrients,{anchor:'2026-09-26',today:'2026-09-26'});assert.equal(V.stats(empty.rows).met,0);assert.equal(NK_REPORT_PDF.create(V.snapshot(empty,'Test'),{detail:false}).pages,1);});
+check('Malformed report is rejected',()=>assert.throws(()=>NK_REPORT_PDF.create({report:{rows:Array(500),days:[]}})));
+check('Pending synchronization stays in captured export context',()=>assert.equal(V.snapshot(r,'Test',{syncPending:true}).syncPending,true));
+check('Real zero is preserved for display',()=>assert.equal(V.amount({...rows.protein,average:0}),'0 g'));
+check('Partial numbers explicitly retain lower-bound prefix',()=>assert.equal(V.amount({...rows.protein,average:10,hasGaps:true}),'≥ 10 g'));
+check('German quotation marks remain searchable PDF text',()=>assert.equal(NK_REPORT_PDF.clean('„mind.“ bedeutet bekannte Teilmenge'),'"mind." bedeutet bekannte Teilmenge'));
+console.log('TOTAL REPORT EXPORT TESTS',passed);
