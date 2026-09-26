@@ -1,0 +1,21 @@
+'use strict';
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),crypto=require('node:crypto');
+const ctx={URL,console};ctx.window=ctx;vm.createContext(ctx);
+for(const f of ['data.js','core.js','veggie-data.js','catalog.js','retail-data.js','retail.js'])vm.runInContext(fs.readFileSync('kompass/'+f,'utf8'),ctx,{filename:f});
+const checks=[];function check(n,fn){fn();checks.push(n);console.log('PASS',n);}
+check('Existing catalogue preserved',()=>assert.equal(ctx.NK_DATA.foods.length,1297));
+check('2590 validated catalogue candidates',()=>{assert.equal(ctx.NK_RETAIL_FOODS.length,2590);assert.equal(ctx.NK_RETAIL_STATUS.rejected,0);});
+check('730 Alpro variants',()=>assert.equal(ctx.NK_RETAIL_FOODS.filter(f=>f.catalog.isAlpro).length,730));
+check('All candidates require a package check',()=>assert.ok(ctx.NK_RETAIL_FOODS.every(f=>f.needsBasisConfirmation)));
+check('Barcode IDs unique',()=>assert.equal(new Set(ctx.NK_RETAIL_FOODS.map(f=>f.id)).size,2590));
+check('Unknown vitamin values remain unknown',()=>assert.ok(ctx.NK_RETAIL_FOODS.some(f=>f.n.vitB12===null)));
+check('Four retailer groups represented',()=>['Migros','Coop','Lidl','Aldi'].forEach(n=>assert.ok(ctx.NK_RETAIL_FOODS.some(f=>f.catalog.stores.includes(n)))));
+check('Authentication and diary core unchanged',()=>{for(const [file,sha] of [['household.js','62690337bf5168cfd32243f0d130c081088317e3'],['app.js','732e0b813ae7b74bdb3dda8d3d7d9e98e4b7e53c'],['core.js','94410819f6f23bcfd072e197a37c87b373277ebe']]){const b=fs.readFileSync('kompass/'+file);assert.equal(crypto.createHash('sha1').update(Buffer.concat([Buffer.from('blob '+b.length+'\0'),b])).digest('hex'),sha);}});
+check('Every referenced local script and style exists',()=>{const s=fs.readFileSync('kompass/index.html','utf8');for(const m of s.matchAll(/(?:src|href)="([^"?]+\.(?:js|css))/g))assert.ok(fs.existsSync('kompass/'+m[1]),m[1]);});
+const store=new Map();ctx.localStorage={getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,String(v)),removeItem:k=>store.delete(k)};ctx.document={querySelector:()=>null,querySelectorAll:()=>[],addEventListener:()=>{}};ctx.navigator={};ctx.addEventListener=()=>{};vm.runInContext(fs.readFileSync('kompass/device.js','utf8'),ctx);
+const p=[{id:'test-d',name:'Dimitri'},{id:'test-p',name:'Patricia'}];
+check('Fixed default ignores last manual switch',()=>{ctx.NK_DEVICE.save({mode:'fixed',id:'test-d'},p);assert.equal(ctx.NK_DEVICE.preferred(p,'test-p'),'test-d');});
+check('Ask mode has no default',()=>{ctx.NK_DEVICE.save({mode:'ask'},p);assert.equal(ctx.NK_DEVICE.preferred(p,'test-p'),null);});
+check('Last mode remembers last profile',()=>{ctx.NK_DEVICE.save({mode:'last'},p);assert.equal(ctx.NK_DEVICE.preferred(p,'test-p'),'test-p');});
+check('Unknown profile cannot be set',()=>assert.throws(()=>ctx.NK_DEVICE.save({mode:'fixed',id:'missing'},p)));
+fs.mkdirSync('test-output',{recursive:true});fs.writeFileSync('test-output/catalog-device-report.json',JSON.stringify({passed:checks.length,checks,totalAvailable:ctx.NK_DATA.foods.length+ctx.NK_RETAIL_FOODS.length,retail:ctx.NK_RETAIL_STATUS},null,2));

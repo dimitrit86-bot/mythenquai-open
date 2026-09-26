@@ -1,0 +1,27 @@
+name: Verify Kompass device and catalogue update
+on:
+  push:
+    branches: [kompass-device-catalog-v12]
+    paths: [kompass/**, tools/kompass_v12_check.js, .github/workflows/kompass-v12-check.yml]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate client JavaScript
+        run: |
+          for file in kompass/*.js; do node --check "$file"; done
+      - name: Existing calculations and recipe regression tests
+        run: node kompass/tests/core.test.js
+      - name: Catalogue, scope and device preference tests
+        run: node tools/kompass_v12_check.js
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kompass-v12-verified-source
+          path: |
+            kompass/
+            test-output/
+          retention-days: 7
