@@ -46,3 +46,6 @@ assert old in s or new in s
 if new not in s:s=s.replace(old,new)
 p.write_text(s)
 print('WebKit form painting and source descriptions aligned with current implementation.')
+p=Path('kompass/macro-profile.css');s=p.read_text()
+addition='\n#profile-form select{overflow:hidden;text-overflow:ellipsis}\n'
+if addition not in s:p.write_text(s+addition)
