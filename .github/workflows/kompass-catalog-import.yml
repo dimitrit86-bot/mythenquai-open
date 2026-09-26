@@ -14,15 +14,30 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: kompass-device-catalog-v12
+      - name: Normalize both brand fields without guessing brands from product names
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('tools/kompass_catalog_import.py')
+          s=p.read_text()
+          s=s.replace("b=tags(r.get('brands_tags') or r.get('brands'));alpro='alpro' in b", "b=tags(r.get('brands_tags'))|tags(r.get('brands'));alpro=any(x.split(':')[-1]=='alpro' for x in b)")
+          p.write_text(s)
+          PY
       - name: Read public bulk export and validate matching products
         run: python3 tools/kompass_catalog_import.py
-      - name: Validate catalogue JavaScript
-        run: node --check kompass/retail-data.js
+      - name: Validate catalogue JavaScript and Alpro coverage
+        run: |
+          node --check kompass/retail-data.js
+          python3 - <<'PY'
+          import json
+          r=json.load(open('kompass/RETAIL-IMPORT.json'))
+          assert r['counts']['Alpro']>0, 'Alpro brand matching must return real records'
+          PY
       - name: Commit public catalogue only to review branch
         run: |
           git config user.name 'Kompass catalogue importer'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add kompass/retail-data.js kompass/RETAIL-IMPORT.json
+          git add tools/kompass_catalog_import.py kompass/retail-data.js kompass/RETAIL-IMPORT.json
           git diff --cached --quiet || git commit -m 'Import sourced Alpro and Swiss retailer Veggie product records'
           git push origin HEAD:kompass-device-catalog-v12
       - uses: actions/upload-artifact@v4
