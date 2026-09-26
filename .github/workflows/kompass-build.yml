@@ -1,0 +1,54 @@
+name: Build Nährstoff-Kompass
+on:
+  push:
+    paths:
+      - 'kompass-src/ready.txt'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: kompass-build
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - name: Unpack verified app source
+        run: |
+          python3 - <<'PY'
+          import base64,hashlib,io,json,pathlib,zipfile
+          root=pathlib.Path('kompass-src')
+          manifest=json.loads((root/'ready.txt').read_text())
+          archive=base64.b64decode(''.join((root/name).read_text().strip() for name in manifest['parts']),validate=True)
+          assert hashlib.sha256(archive).hexdigest()==manifest['sha256'], 'Source archive integrity error'
+          z=zipfile.ZipFile(io.BytesIO(archive))
+          for entry in z.infolist():
+              p=pathlib.PurePosixPath(entry.filename)
+              assert not p.is_absolute() and '..' not in p.parts and p.parts[0] in ('kompass','kompass-src'), 'Unsafe archive path'
+              assert entry.file_size<25000000, 'Unexpected archive entry'
+          z.extractall('.')
+          PY
+      - name: Import official Swiss data and pinned scanner dependencies
+        run: python3 kompass-src/build_data.py
+      - name: Check JavaScript and nutrient calculations
+        run: |
+          node --check kompass/app.js
+          node --check kompass/household.js
+          node --check kompass/scanner.js
+          node kompass-src/checks.js
+      - name: Publish generated files to the existing Pages branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add kompass kompass-src/build_data.py kompass-src/checks.js kompass-src/build-report.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'Build Nährstoff-Kompass with official food database and local scanner'
+            git push
+          fi
+      - name: Summary
+        run: |
+          echo '## Nährstoff-Kompass built' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Only kompass/ and its build files were changed. Existing tennis pages were left untouched.' >> "$GITHUB_STEP_SUMMARY"
+          cat kompass-src/build-report.json >> "$GITHUB_STEP_SUMMARY"
