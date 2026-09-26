@@ -29,7 +29,7 @@
       element.querySelector('.metric-label > span')?.textContent.trim() === 'Protein'
     );
     const date = root.querySelector('#diary-date')?.value;
-    if (!card || !date || !C.validDate(date)) return;
+    if (!card || card.dataset.macroGoal==='1' || !date || !C.validDate(date)) return;
     const state = window.NK_APP.getState();
     const intake = C.aggregate(C.dayEntries(state, date).map(entry => entry.n), ['protein']).protein;
     const m = model(state.profile, intake);

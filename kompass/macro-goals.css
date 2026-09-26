@@ -1,0 +1,33 @@
+/* Goal selection and equal prominence for all three macronutrients. */
+.macro-settings{padding-bottom:16px;margin-bottom:22px;border-bottom:1px solid var(--border)}
+.macro-settings select{width:100%;max-width:100%;min-height:46px;font-size:16px}
+.macro-description{padding:12px;border-radius:12px;background:var(--soft);line-height:1.6;margin-top:14px}
+.macro-mode-line{display:flex;align-items:center;flex-wrap:wrap;gap:8px 18px;margin:0 0 18px;font-size:13px}
+.macro-mode-line small{flex-basis:100%;color:var(--muted);font-size:11px}
+.macro-mode-line .muted-link{min-height:38px}
+.macro-preview-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0}
+.macro-preview-value{padding:12px;border:1px solid var(--border);border-radius:12px;min-width:0;background:var(--soft)}
+.macro-preview-value>span,.macro-preview-value>strong,.macro-preview-value>small{display:block;overflow-wrap:anywhere}
+.macro-preview-value>span{font-size:12px;color:var(--muted)}
+.macro-preview-value>strong{font-size:21px;line-height:1.5;color:var(--green);font-variant-numeric:tabular-nums}
+.macro-preview-value small{font-size:10px;font-weight:400}
+.macro-source-links{display:flex;flex-direction:column;gap:10px;margin:16px 0}.macro-source-links a{overflow-wrap:anywhere}
+.macro-method{font-size:12px;line-height:1.6}
+#macro-preview .notice{display:block}#macro-preview button{white-space:normal}
+.macro-intake-label{display:block;color:var(--muted);font-size:11px;margin-top:8px}
+.macro-target{margin-top:13px;padding:10px;border-radius:10px;background:var(--soft);min-width:0}
+.macro-target>span{display:block;font-size:10px;line-height:1.4;color:var(--muted)}
+.macro-target>strong{display:block;font-size:18px;line-height:1.4;color:var(--green);overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.macro-target small{font-size:11px;font-weight:400;white-space:nowrap}
+.macro-target-kind{font-size:10px;line-height:1.5;margin-top:9px;color:var(--muted);overflow-wrap:anywhere}
+.macro-metric .metric-bottom{font-size:11px;line-height:1.5}.macro-metric .muted-link{min-height:40px}
+.macro-metric.hero .macro-target{background:rgba(255,255,255,.13)}
+.macro-metric.hero .macro-target>strong{color:white}
+.macro-metric.hero .macro-target>span,.macro-metric.hero .macro-intake-label,.macro-metric.hero .macro-target-kind{color:#e1efe8}
+.macro-metric.hero .muted-link{color:white}
+@media(max-width:380px){.macro-target{padding:8px}.macro-target>strong{font-size:16px}.macro-preview-value{padding:10px}.macro-preview-value>strong{font-size:19px}.macro-settings select{font-size:14px}}
+
+/* Prevent WebKit's native option width from expanding a narrow profile form. */
+#profile-form .field{min-width:0;max-width:100%}
+#profile-form .field label,#profile-form .field small{overflow-wrap:anywhere}
+#profile-form select{display:block;appearance:none;-webkit-appearance:none;width:100%;max-width:100%;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:32px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23215a48' stroke-width='2'/%3E%3C/svg%3E");background-repeat:no-repeat;background-size:10px 7px;background-position:right 12px center}
