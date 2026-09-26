@@ -1,6 +1,6 @@
 /* Additive device UI; existing authentication and private storage remain unchanged. */
 (function(){'use strict';const D=window.NK_DEVICE;if(!D)return;const LAST='nk:last-profile:1';
-try{const p=D.read();if(p.mode==='fixed')localStorage.setItem(LAST,p.id);else if(p.mode==='ask')localStorage.removeItem(LAST);}catch{}
+// Startup selection is handled by household.js, without overwriting the last manual selection.
 let editorTouched=false,ready=false;
 const root=document.getElementById('app'),dlg=document.getElementById('household-dialog');
 const profiles=()=>[...dlg.querySelectorAll('[data-nk="choose"]')].map(b=>({id:b.dataset.id,name:b.querySelector('b')?.textContent||'Profil'}));
