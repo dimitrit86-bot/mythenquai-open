@@ -1,33 +1,56 @@
-name: Verify Kompass product import sources
+name: Verify Kompass product import portions and Spanish goal screen
 on:
   push:
     branches: [kompass-import-celebration-v14]
-    paths: [.github/workflows/kompass-import-v14.yml]
+    paths: [tools/nk14/**, tools/apply_nk14.py, tools/nk14_followup.py, .github/workflows/kompass-import-v14.yml]
 permissions:
-  contents: read
+  contents: write
 jobs:
-  source:
+  verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - name: Inspect requested public product page
+        with:
+          fetch-depth: 0
+      - name: Apply reviewed source changes
         run: |
-          mkdir -p source-check
-          python3 - <<'PY'
-          import urllib.request,json
-          from pathlib import Path
-          u='https://www.coop.ch/de/lebensmittel/fleisch-fisch/the-veggie-chef/steaks-filets/redefine-vegane-alternative-zu-flank-steak/p/7451865'
-          req=urllib.request.Request(u,headers={'User-Agent':'Naehrstoff-Kompass/1.4 (+https://github.com/dimitrit86-bot/mythenquai-open)','Accept':'text/html','Accept-Language':'de-CH,de;q=0.9'})
-          with urllib.request.urlopen(req,timeout=30) as r:
-            b=r.read(4000000)
-            Path('source-check/coop.html').write_bytes(b)
-            Path('source-check/response.json').write_text(json.dumps({'status':r.status,'url':r.url,'bytes':len(b),'type':r.headers.get('Content-Type')},indent=2))
-            print('Public source',r.status,'bytes',len(b))
-          PY
+          python3 tools/apply_nk14.py
+          if test -f tools/nk14_followup.py; then python3 tools/nk14_followup.py; fi
+      - name: Validate source and calculation regressions
+        run: |
+          for f in kompass/*.js kompass/server/*.js; do node --check "$f"; done
+          node kompass/tests/core.test.js
+          node kompass/tests/protein-overview.test.js
+          node kompass/tests/sync-core.test.js
+          node kompass/tests/portion-normalizer.test.js
+          node kompass/tests/import-celebration.test.js
+          node kompass/tests/lookup-service.test.js
+      - name: Install browser test dependencies
+        run: |
+          python3 -m pip install playwright
+          python3 -m playwright install --with-deps chromium webkit
+      - name: Chromium integration with synthetic household only
+        env:
+          TEST_BROWSER: chromium
+        run: python3 tools/test_import14.py
+      - name: WebKit integration with synthetic household only
+        env:
+          TEST_BROWSER: webkit
+        run: python3 tools/test_import14.py
+      - name: Commit tested client and server source on review branch only
+        run: |
+          git config user.name 'Kompass source verifier'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add kompass/ tools/test_import14.py
+          git diff --cached --quiet || git commit -m 'Verify name and link import, portion correction and Spanish protein goal celebration'
+          git push origin HEAD:kompass-import-celebration-v14
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: kompass-public-product-source
-          path: source-check/
-          retention-days: 1
+          name: kompass-v14-source-and-tests
+          path: |
+            kompass/
+            test-output/
+            tools/test_import14.py
+          retention-days: 7
