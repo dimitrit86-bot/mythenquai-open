@@ -1,0 +1,52 @@
+name: Verify Kompass nutrient reports and per-profile frequency
+on:
+  push:
+    branches: [kompass-reports-v16]
+    paths: [tools/nk16/**, tools/apply_nk16.py, tools/reports_followup.py, .github/workflows/kompass-reports-v16.yml]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply reviewed report changes
+        run: |
+          python3 tools/apply_nk16.py
+          if test -f tools/reports_followup.py; then python3 tools/reports_followup.py; fi
+          mkdir -p test-output
+      - name: JavaScript syntax and calculation regressions
+        run: |
+          for f in kompass/*.js; do node --check "$f"; done
+          for f in kompass/tests/*.test.js; do node "$f"; done
+      - name: Install test browsers
+        run: |
+          python3 -m pip install playwright
+          python3 -m playwright install --with-deps chromium webkit
+      - name: Chromium UI and storage with synthetic profiles
+        env:
+          TEST_BROWSER: chromium
+        run: python3 tools/test_reports.py
+      - name: WebKit UI and storage with synthetic profiles
+        env:
+          TEST_BROWSER: webkit
+        run: python3 tools/test_reports.py
+      - name: Commit verified source to staging only
+        run: |
+          git config user.name 'Kompass verifier'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add kompass/ tools/test_reports.py
+          git diff --cached --quiet || git commit -m 'Verify daily weekly monthly reports with nutrient data completeness'
+          git push origin HEAD:kompass-reports-v16
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kompass-v16-source-tests
+          path: |
+            kompass/
+            test-output/
+            tools/test_reports.py
+          retention-days: 7
