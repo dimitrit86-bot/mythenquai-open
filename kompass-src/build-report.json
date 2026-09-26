@@ -1,0 +1,57 @@
+{
+  "foods": 1246,
+  "counts": {
+    "generic": 1216,
+    "brand": 30
+  },
+  "nutrientFields": 47,
+  "workbookSha256": "f4bb854944ef811f9b8463984389f8121e73278c4fd24fc3e8d16336cb711270",
+  "download": "https://naehrwertdaten.ch/wp-content/uploads/2026/07/Schweizer_Nahrwertdatenbank.xlsx",
+  "source": "BLV 7.1",
+  "builtAt": "2026-09-26T13:44:21.621009+00:00",
+  "dependencies": [
+    {
+      "name": "tesseract.js",
+      "version": "6.0.1",
+      "integrity": "sha512-/sPvMvrCtgxnNRCjbTYbr7BRu0yfWDsMZQ2a/T5aN/L1t8wUQN6tTWv6p6FwzpoEBA0jrN2UD2SX4QQFRdoDbA==",
+      "license": "Apache-2.0",
+      "assets": [
+        "tesseract.min.js",
+        "worker.min.js"
+      ]
+    },
+    {
+      "name": "tesseract.js-core",
+      "version": "6.0.0",
+      "integrity": "sha512-1Qncm/9oKM7xgrQXZXNB+NRh19qiXGhxlrR8EwFbK5SaUbPZnS5OMtP/ghtqfd23hsr1ZvZbZjeuAGcMxd/ooA==",
+      "license": "Apache-2.0",
+      "assets": [
+        "core/tesseract-core-lstm.wasm.js",
+        "core/tesseract-core-lstm.wasm",
+        "core/tesseract-core-simd-lstm.wasm.js",
+        "core/tesseract-core-simd-lstm.wasm"
+      ]
+    },
+    {
+      "name": "@zxing/browser",
+      "version": "0.1.5",
+      "integrity": "sha512-4Lmrn/il4+UNb87Gk8h1iWnhj39TASEHpd91CwwSJtY5u+wa0iH9qS0wNLAWbNVYXR66WmT5uiMhZ7oVTrKfxw==",
+      "license": "MIT",
+      "assets": [
+        "zxing-browser.min.js"
+      ]
+    },
+    {
+      "language": "eng",
+      "url": "https://tessdata.projectnaptha.com/4.0.0_fast/eng.traineddata.gz",
+      "sha256": "18c1ac52b75e35d44735fb6c2a60acfaf23033524653200738e98f0243edb75b",
+      "license": "Apache-2.0; Tesseract tessdata"
+    },
+    {
+      "language": "deu",
+      "url": "https://tessdata.projectnaptha.com/4.0.0_fast/deu.traineddata.gz",
+      "sha256": "acb48fa5d63b5088b6299bda4a700d86e97bb9421253be8fc4af8ea2d8247740",
+      "license": "Apache-2.0; Tesseract tessdata"
+    }
+  ]
+}

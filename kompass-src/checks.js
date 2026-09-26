@@ -1,0 +1,28 @@
+'use strict';
+require('../kompass/tests/core.test.js');
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const scanner=require('../kompass/scanner.js');
+let passed=0;function check(name,f){f();passed++;console.log('PASS',name);}
+const near=(a,b)=>assert(Math.abs(a-b)<1e-8,`${a} != ${b}`);
+check('Label decimal comma and matching macro lines',()=>{const p=scanner.parse('pro 100 g\nEnergie 840 kJ / 200 kcal\nFett 8,5 g\ndavon gesättigte Fettsäuren 1,2 g\nKohlenhydrate 19 g\ndavon Zucker 0 g\nBallaststoffe 4 g\nEiweiss 12,3 g\nSalz 0,4 g');near(p.n.energy,200);near(p.n.fat,8.5);near(p.n.saturated,1.2);near(p.n.protein,12.3);near(p.n.sugar,0);near(p.n.fiber,4);});
+check('OCR absent vitamin is unknown, not zero',()=>assert.equal(scanner.parse('100 g\nFett 0 g').n.vitB12,undefined));
+check('OCR less-than value remains unknown with qualifier',()=>{const p=scanner.parse('pro 100g\nSalz <0,5 g');assert.equal(p.n.salt,null);assert.match(p.q.salt,/<0,5/);});
+check('Table first and last columns',()=>{const t='pro 100g / 30g\nProtein 10g 3g\nEnergie 400kJ 120kJ / 100kcal 30kcal';near(scanner.parse(t).n.protein,10);near(scanner.parse(t,'last').n.protein,3);near(scanner.parse(t,'last').n.energy,30);});
+check('B12 digit is not quantity and ug unit works',()=>near(scanner.parse('pro 100ml\nVitamin B12 2,5 ug').n.vitB12,2.5));
+check('Minerals converted from grams to mg',()=>near(scanner.parse('pro 100g\nCalcium 0,12 g').n.calcium,120));
+check('Vitamin D converted mg to micrograms',()=>near(scanner.parse('pro 100g\nVitamin D 0.005 mg').n.vitD,5));
+check('kJ converted to kcal only when kcal absent',()=>near(scanner.parse('100g\nEnergie 418,4 kJ').n.energy,100));
+check('Volume basis detected',()=>assert.equal(scanner.parse('je 100 ml\nProtein 5 g').basis,'ml'));
+check('Missing base quantity is explicitly warned',()=>assert(scanner.parse('Protein 5 g').warnings.some(x=>x.includes('Bezugsmenge nicht erkannt'))));
+check('Vitamin A E folate equivalence not invented',()=>{const p=scanner.parse('100g\nVitamin A 500ug\nVitamin E 4mg\nFolsäure 100ug');assert.equal(p.n.vitA,undefined);assert.equal(p.n.vitE,undefined);assert.equal(p.n.folate,undefined);});
+check('English dietary fiber supported',()=>near(scanner.parse('100g\nDietary fiber 3 g').n.fiber,3));
+check('French fibre supported',()=>near(scanner.parse('100g\nFibres 4 g').n.fiber,4));
+check('OFF exact zero preserved and absent null',()=>{const p=scanner.fromOFF({code:'12345678',nutriments:{fat_100g:0}});assert.equal(p.n.fat,0);assert.equal(p.n.protein,null);});
+check('OFF protein product basis explicitly selectable',()=>{const p=scanner.fromOFF({code:'12345678',nutriments:{proteins_100g:5}},'ml');assert.equal(p.basis,'ml');near(p.n.protein,5);});
+check('OFF standardized nutrient mass units',()=>{const p=scanner.fromOFF({code:'12345678',nutriments:{calcium_100g:.12,'vitamin-b12_100g':.0000025}});near(p.n.calcium,120);near(p.n.vitB12,2.5);});
+check('OFF kcal preferred over total energy',()=>near(scanner.fromOFF({nutriments:{'energy-kcal_100g':99,energy_100g:400}}).n.energy,99));
+check('OFF negative and nonfinite values rejected',()=>{const p=scanner.fromOFF({nutriments:{proteins_100g:-5,fat_100g:Infinity}});assert.equal(p.n.protein,null);assert.equal(p.n.fat,null);});
+check('App scripts contain no literal chosen password or setup secret',()=>{for(const name of ['app.js','household.js','scanner.js'])assert(!fs.readFileSync(__dirname+'/../kompass/'+name,'utf8').includes('1214'));});
+check('Main UI is locked before authentication',()=>{const h=fs.readFileSync(__dirname+'/../kompass/index.html','utf8');assert(h.includes('id="app" hidden'));assert(!h.includes('<script src="app.js"'));});
+check('Service worker never caches external API responses',()=>{const sw=fs.readFileSync(__dirname+'/../kompass/sw.js','utf8');assert(sw.includes('u.origin!==self.location.origin'));assert(!sw.includes('supabase.co'));});
+(async()=>{const crypto=require('node:crypto').webcrypto;const key=await crypto.subtle.generateKey({name:'AES-GCM',length:256},false,['encrypt','decrypt']);const iv=crypto.getRandomValues(new Uint8Array(12)),plain=new TextEncoder().encode('synthetic pending state');const cipher=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,plain);const decoded=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,cipher);assert.equal(new TextDecoder().decode(decoded),'synthetic pending state');passed++;console.log('PASS AES-GCM encrypted state roundtrip');const corrupt=new Uint8Array(cipher);corrupt[0]^=1;await assert.rejects(()=>crypto.subtle.decrypt({name:'AES-GCM',iv},key,corrupt));passed++;console.log('PASS AES-GCM tampering rejected');console.log('ADDITIONAL PASSED',passed);})().catch(e=>{console.error(e);process.exitCode=1;});
