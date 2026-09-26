@@ -1,0 +1,66 @@
+name: Verify visual Kompass reports and local PDF export
+on:
+  push:
+    branches: [kompass-visual-reports-v17]
+    paths: [tools/nk17/**, tools/apply_nk17.py, tools/reports17_followup.py, .github/workflows/kompass-visual-reports-v17.yml]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply reviewed visual report and PDF source
+        run: |
+          python3 tools/apply_nk17.py
+          if test -f tools/reports17_followup.py; then python3 tools/reports17_followup.py; fi
+      - name: Bundle pinned PDF library with verified checksum and licence
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import urllib.request,hashlib,json
+          rows=[]
+          for source,dest,expected in [('dist/jspdf.umd.min.js','vendor/jspdf.umd.min.js','e6551fcdc32f09d6853b2c5126d18d01d9447e0da618a41a11ebeee0f6c20d54'),('LICENSE','vendor/licenses/jspdf-4.2.1.txt','dc388ec35ff463288cdde3588a36fd4ed12a45deff053243b37309acc9ef583b')]:
+            url='https://raw.githubusercontent.com/parallax/jsPDF/v4.2.1/'+source
+            with urllib.request.urlopen(url,timeout=30) as r:b=r.read(1500000)
+            digest=hashlib.sha256(b).hexdigest();assert digest==expected,'PDF vendor checksum mismatch'
+            p=Path('kompass')/dest;p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(b)
+            rows.append({'source':url,'path':dest,'sha256':digest,'bytes':len(b)})
+          Path('kompass/vendor/pdf-lock.json').write_text(json.dumps({'version':'4.2.1','files':rows},indent=2))
+          PY
+      - name: Syntax and existing plus new report export regressions
+        run: |
+          mkdir -p test-output
+          for f in kompass/*.js; do node --check "$f"; done
+          for f in kompass/tests/*.test.js; do node "$f"; done
+      - name: Install browser test engines and PDF inspector
+        run: |
+          python3 -m pip install playwright pypdf
+          python3 -m playwright install --with-deps chromium webkit
+      - name: Chromium real report UI and downloadable PDFs with synthetic profiles
+        env:
+          TEST_BROWSER: chromium
+        run: python3 tools/test_visual_reports.py
+      - name: WebKit real report UI and downloadable PDFs with synthetic profiles
+        env:
+          TEST_BROWSER: webkit
+        run: python3 tools/test_visual_reports.py
+      - name: Commit verified source only to review branch
+        run: |
+          git config user.name 'Kompass verifier'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add kompass/ tools/test_visual_reports.py
+          git diff --cached --quiet || git commit -m 'Verify visual nutrient reports and compact full PDF exports'
+          git push origin HEAD:kompass-visual-reports-v17
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kompass-v17-source-pdf-tests
+          path: |
+            kompass/
+            test-output/
+            tools/test_visual_reports.py
+          retention-days: 7
