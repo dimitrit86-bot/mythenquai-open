@@ -1,0 +1,82 @@
+name: Verify published Nährstoff-Kompass
+on:
+  push:
+    paths:
+      - '.github/workflows/kompass-online-check.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install browser test runner
+        run: |
+          python3 -m pip install 'playwright==1.57.0'
+          python3 -m playwright install --with-deps chromium
+      - name: Check live app and local OCR with synthetic nutrition label
+        run: |
+          python3 - <<'PY'
+          import json, pathlib, urllib.request, urllib.error
+          from playwright.sync_api import sync_playwright
+          base='https://dimitrit86-bot.github.io/mythenquai-open/kompass/'
+          api='https://wpmyuzpcraduhaybjvmb.supabase.co/functions/v1/'
+          results=[]
+          def ok(message):
+              results.append(message)
+              print('PASS:',message,flush=True)
+          with urllib.request.urlopen(api+'nutrient-compass',timeout=30) as r:
+              health=json.load(r)
+          assert health.get('service')=='Naehrstoff-Kompass'
+          ok('Deployed data service responds; owner activation is not invoked by tests')
+          for endpoint in ('nutrient-compass','nutrient-device-key'):
+              request=urllib.request.Request(api+endpoint,data=b'{"action":"profiles"}',headers={'Content-Type':'application/json'})
+              try:
+                  urllib.request.urlopen(request,timeout=30)
+                  raise AssertionError('Unauthenticated access was not denied')
+              except urllib.error.HTTPError as e:
+                  assert e.code==401,(endpoint,e.code)
+              ok(endpoint+': unauthenticated access denied')
+          with sync_playwright() as p:
+              browser=p.chromium.launch()
+              page=browser.new_page(viewport={'width':393,'height':852},device_scale_factor=1)
+              page.set_default_timeout(60000)
+              errors=[]
+              page.on('pageerror',lambda e:errors.append(str(e)))
+              response=page.goto(base,wait_until='networkidle',timeout=60000)
+              assert response.status==200
+              page.wait_for_selector('#gate-password')
+              assert page.locator('#app').is_hidden()
+              assert page.locator('#gate-confirm').count()==0
+              ok('Published mobile app opens the login gate and hides personal UI')
+              assert page.evaluate('window.NK_DATA.foods.length')==1246
+              ok('All 1246 official foods load from the deployed site')
+              assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
+              ok('Mobile login fits without horizontal overflow')
+              manifest=page.evaluate("async()=>await (await fetch('manifest.webmanifest')).json()")
+              assert manifest['display']=='standalone' and manifest['scope']=='./'
+              page.evaluate('async()=>await navigator.serviceWorker.ready')
+              ok('PWA manifest and scoped service worker are available')
+              page.add_script_tag(url=base+'vendor/tesseract.min.js')
+              ocr=page.evaluate('''async()=>{
+                const c=document.createElement('canvas');c.width=1100;c.height=620;
+                const x=c.getContext('2d');x.fillStyle='white';x.fillRect(0,0,c.width,c.height);x.fillStyle='black';x.font='40px Arial';
+                ['Nutrition per 100 ml','Energy 60 kcal','Fat 2.0 g','Carbohydrate 6.0 g','Sugars 4.0 g','Protein 5.0 g','Salt 0.12 g'].forEach((s,i)=>x.fillText(s,50,75+i*72));
+                const w=await Tesseract.createWorker('deu+eng',1,{workerPath:new URL('vendor/worker.min.js',location.href).href,corePath:new URL('vendor/core',location.href).href,langPath:new URL('vendor/lang',location.href).href});
+                try{const result=await w.recognize(c.toDataURL('image/png'));return {text:result.data.text,parsed:NK_SCANNER.parse(result.data.text)};}finally{await w.terminate();}
+              }''')
+              print('Synthetic label recognition:',json.dumps(ocr,ensure_ascii=False),flush=True)
+              n=ocr['parsed']['n']
+              assert ocr['parsed']['basis']=='ml' and n.get('protein')==5 and n.get('energy')==60 and abs(n.get('salt',-1)-0.12)<0.0001
+              ok('Real browser OCR loads local worker, WASM and languages and reads synthetic nutrition values')
+              assert not errors,errors
+              ok('No unhandled browser JavaScript errors')
+              pathlib.Path('online-check').mkdir(exist_ok=True)
+              page.screenshot(path='online-check/mobile-login.png',full_page=True)
+              browser.close()
+          pathlib.Path('online-check/result.json').write_text(json.dumps({'checks':results,'passed':len(results),'activationPerformed':False,'realPhoneTest':False},indent=2))
+          with open(__import__('os').environ['GITHUB_STEP_SUMMARY'],'a') as f:
+              f.write('## Published nutrition app verification\n'+'\n'.join('- '+s for s in results)+'\nNo owner setup or personal-data writes were performed. OCR used a synthetic test label.\n')
+          PY
