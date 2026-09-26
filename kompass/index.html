@@ -6,13 +6,15 @@
 <meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow"><meta name="description" content="Dein privates Ernährungstagebuch mit Schweizer Lebensmitteldaten und eigenen Gerichten.">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Kompass">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png"><link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css">
+<style>.catalog-update{padding:10px 16px;background:#eef5ef;color:#215a48;font-size:13px;line-height:1.5}.catalog-update summary{cursor:pointer;font-weight:600}.catalog-update p{max-width:900px;margin:8px 0}.source-badge,.ingredient-source{overflow-wrap:anywhere;white-space:normal}</style>
 <title>Nährstoff-Kompass</title>
 </head>
 <body>
 <a href="#main" class="skip">Zum Inhalt</a>
+<details class="catalog-update"><summary>Neu: 51 vegetarische und vegane Markenprodukte</summary><p>Suche zum Beispiel nach Planted, Alpro, Oatly, Taifun, Quorn, Violife oder Beyond Meat. Die Ergänzungen sind auch als Zutaten deiner Gerichte verfügbar.</p><p>Datenbasis: 1’246 BLV-Lebensmittel + 51 Markenprodukte = 1’297 Einträge. Die allgemeine BLV-Bezeichnung in bisherigen Quellenansichten gilt nur für den Basisbestand, nicht für die separat gekennzeichneten Herstellerdaten. Quelle, Länderfassung und Datenlücken sind beim Produkt hinterlegt. Angaben mit deiner Packung vergleichen.</p><p><a href="VEGGIE-CATALOG.md" target="_blank" rel="noopener">Datenstand und Hinweise</a> · 26.09.2026</p></details>
 <div id="gate-root"><div class="gate-card"><p class="eyebrow">NÄHRSTOFF-KOMPASS</p><h1>Dein Kompass startet.</h1><p>Lebensmitteldaten und geschützter Zugang werden geladen …</p><noscript>Bitte JavaScript aktivieren, um die Web-App zu verwenden.</noscript></div></div><div id="app" hidden><main class="loading"><h1>Nährstoff-Kompass</h1><p>Lebensmitteldaten werden geladen …</p><noscript>Bitte JavaScript im Browser aktivieren.</noscript></main></div>
 <dialog id="dialog" aria-labelledby="dialog-title"></dialog>
 <dialog id="household-dialog" aria-label="Haushaltsprofile"></dialog><dialog id="scan-dialog" aria-label="Produkt scannen"></dialog><div id="toast" class="toast" role="status" aria-live="polite"></div>
 <input id="backup-input" type="file" accept="application/json,.json" hidden>
-<script src="data.js"></script><script src="core.js"></script><script src="scanner.js"></script><script src="household.js"></script>
+<script src="data.js"></script><script src="core.js"></script><script src="veggie-data.js"></script><script src="catalog.js"></script><script src="scanner.js"></script><script src="household.js"></script>
 </body></html>

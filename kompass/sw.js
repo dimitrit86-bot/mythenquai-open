@@ -1,6 +1,6 @@
 /* App-scoped static cache. Never caches private API responses or modifies another app. */
-const CACHE='nk-kompass-1.0.0';
-const SHELL=['./','./index.html','./style.css','./core.js','./app.js','./data.js','./household.js','./scanner.js','./manifest.webmanifest','./icon-192.png','./icon-512.png','./icon.svg'];
+const CACHE='nk-kompass-1.1.0';
+const SHELL=['./','./index.html','./style.css','./core.js','./app.js','./data.js','./veggie-data.js','./catalog.js','./household.js','./scanner.js','./manifest.webmanifest','./icon-192.png','./icon-512.png','./icon.svg'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL))));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('nk-kompass-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('message',e=>{if(e.data==='ACTIVATE_UPDATE')self.skipWaiting();});
