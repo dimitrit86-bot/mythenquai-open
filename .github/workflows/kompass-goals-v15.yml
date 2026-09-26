@@ -1,0 +1,52 @@
+name: Verify Kompass nutrition goals and macro overview
+on:
+  push:
+    branches: [kompass-macro-goals-v15]
+    paths: [tools/nk15/**, tools/apply_nk15.py, tools/goals_followup.py, .github/workflows/kompass-goals-v15.yml]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply reviewed client changes
+        run: |
+          python3 tools/apply_nk15.py
+          if test -f tools/goals_followup.py; then python3 tools/goals_followup.py; fi
+          mkdir -p test-output
+      - name: Syntax and all existing plus new calculation tests
+        run: |
+          for f in kompass/*.js; do node --check "$f"; done
+          for f in kompass/tests/*.test.js; do node "$f"; done
+      - name: Install browser test engines
+        run: |
+          python3 -m pip install playwright
+          python3 -m playwright install --with-deps chromium webkit
+      - name: Chromium real UI and encrypted persistence with synthetic profiles
+        env:
+          TEST_BROWSER: chromium
+        run: python3 tools/test_goals.py
+      - name: WebKit real UI and encrypted persistence with synthetic profiles
+        env:
+          TEST_BROWSER: webkit
+        run: python3 tools/test_goals.py
+      - name: Commit verified app sources on staging only
+        run: |
+          git config user.name 'Kompass verifier'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add kompass/ tools/test_goals.py
+          git diff --cached --quiet || git commit -m 'Verify selectable nutrition goals and per-profile macro targets'
+          git push origin HEAD:kompass-macro-goals-v15
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kompass-v15-source-tests
+          path: |
+            kompass/
+            test-output/
+            tools/test_goals.py
+          retention-days: 7
