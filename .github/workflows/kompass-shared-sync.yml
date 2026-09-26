@@ -1,0 +1,57 @@
+name: Verify private library and conflict-safe nutrition sync
+on:
+  push:
+    branches: [kompass-recovery-library-verified]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply reviewed source bundle
+        run: python3 tools/apply_nk13.py
+      - name: JavaScript syntax and calculation regressions
+        run: |
+          for f in kompass/*.js; do node --check "$f"; done
+          node kompass/tests/core.test.js
+          node kompass/tests/protein-overview.test.js
+          node kompass/tests/sync-merge.test.js
+          node kompass/tests/library-api.test.js
+      - name: Prepare original source for reproducing reported error
+        run: |
+          mkdir -p original test-output
+          git archive 791d4a708017a1020ab3d593798b2a5e9d7a88f2 kompass | tar -x -C original
+          python3 -m pip install playwright
+          python3 -m playwright install --with-deps chromium webkit
+      - name: Chromium real UI flows with synthetic household only
+        env:
+          TEST_BROWSER: chromium
+        run: |
+          python3 tools/test_browser.py
+          cp test-output/browser-report.json test-output/chromium-report.json
+      - name: WebKit real UI flows with synthetic household only
+        env:
+          TEST_BROWSER: webkit
+        run: |
+          python3 tools/test_browser.py
+          cp test-output/browser-report.json test-output/webkit-report.json
+      - name: Commit verified application sources to staging branch only
+        run: |
+          git config user.name 'Kompass verified source builder'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add kompass tools/test_browser.py
+          git diff --cached --quiet || git commit -m 'Verify and stage conflict-safe storage and household product recipe library'
+          git push origin HEAD:kompass-recovery-library-verified
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kompass-shared-sync-test-output
+          path: |
+            test-output/
+            kompass/
+            tools/test_browser.py
+          retention-days: 7
