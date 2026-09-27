@@ -1,0 +1,11 @@
+/* Contextual import stays readable on both mobile platforms. */
+.custom-import-options{padding:14px;background:var(--soft,#eff5ef);border:1px solid var(--border,#dce6dd);border-radius:12px;margin-bottom:18px}
+.custom-import-options h3{font-size:16px;margin:0 0 10px}
+.custom-import-options .actions{display:flex;flex-wrap:wrap;gap:8px}
+.custom-import-options .button{min-height:44px}
+#custom-import-status{overflow-wrap:anywhere}
+#scan-text-block textarea{width:100%;box-sizing:border-box;font-size:16px;min-height:170px}
+#scan-merge-mode{width:100%;min-width:0;white-space:normal;max-width:100%;font-size:14px;appearance:none;-webkit-appearance:none;text-overflow:ellipsis;overflow:hidden}
+#scan-review .field{min-width:0}
+#scan-dialog:has(#scan-text-block[open]){scroll-behavior:smooth}
+@media(prefers-reduced-motion:reduce){#scan-dialog{scroll-behavior:auto}}
