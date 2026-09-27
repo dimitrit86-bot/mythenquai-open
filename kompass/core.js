@@ -3,6 +3,7 @@
  'use strict';
  const PIECES=typeof module==='object'&&module.exports?require('./product-portions.js'):globalThis.NK_PIECES;
  const VERSION='1.8.0', SCHEMA=1;
+ const RELEASES=typeof module==='object'&&module.exports?require('./release-notes-core.js'):globalThis.NK_RELEASE_CORE;
  const GOALS=typeof module==='object'&&module.exports?require('./macro-goals.js'):globalThis.NK_MACROS;
  const clone=x=>JSON.parse(JSON.stringify(x));
  function number(v,{optional=false,min=0,max=1e9}={}){
@@ -102,7 +103,7 @@
   s.foods.forEach(f=>validateFood(f,keys));
   for(const r of s.recipes){if(typeof r.id!=='string'||!/^[A-Za-z0-9_-]{1,100}$/.test(r.id)||typeof r.name!=='string'||r.name.length>240||!Array.isArray(r.ingredients)||!r.ingredients.length||r.ingredients.length>200)throw Error('Ungültiges Gericht.');positive(r.servings);if(r.finalWeight!==null&&r.finalWeight!==undefined)positive(r.finalWeight);r.ingredients.forEach(i=>{validateFood(i.food,keys);factor(i.food,i.quantity,i.unit,i.density);});}
   for(const e of s.entries){if(typeof e.id!=='string'||!/^[A-Za-z0-9_-]{1,100}$/.test(e.id)||!Number.isInteger(e.meal)||e.meal<0||e.meal>3||typeof e.name!=='string'||!validDate(e.date)||!e.n)throw Error('Ungültiger Tagebucheintrag.');for(const k of keys){const v=e.n[k];if(!v||v.value!==null&&(!Number.isFinite(v.value)||v.value<0)||!Number.isInteger(v.known)||!Number.isInteger(v.total)||v.known<0||v.total<v.known||!Array.isArray(v.missing)||v.missing.some(m=>typeof m!=='string'))throw Error('Ungültige Nährwert-Zusammenfassung.');}}
-  const p=s.profile;GOALS.validate(p);if(p.reportFrequency!==undefined&&!['daily','weekly','monthly'].includes(p.reportFrequency))throw Error('Ungültige Report-Häufigkeit.');
+  const p=s.profile;if(p.releaseNotesSeen!==undefined){const v=RELEASES.normalize(p.releaseNotesSeen);if(v)p.releaseNotesSeen=v;else delete p.releaseNotesSeen;}GOALS.validate(p);if(p.reportFrequency!==undefined&&!['daily','weekly','monthly'].includes(p.reportFrequency))throw Error('Ungültige Report-Häufigkeit.');
   if(!['','m','w'].includes(p.sex)||typeof p.special!=='boolean'||typeof p.smoker!=='boolean'||!['','pre','post'].includes(p.menopause)||!['','low','medium','high'].includes(p.phytate)||!p.manual||Array.isArray(p.manual)||typeof p.manual!=='object')throw Error('Ungültiges Referenzprofil.');
   for(const [k,lo,hi] of [['age',0,120],['weight',1,600],['height',40,260],['calcWeight',1,600]])if(p[k]!==null&&p[k]!==undefined&&(!Number.isFinite(p[k])||p[k]<lo||p[k]>hi))throw Error('Ungültiger Profilwert.');
   for(const [k,v] of Object.entries(p.manual))if(!keys.includes(k)||!Number.isFinite(v)||v<=0||v>1e9)throw Error('Ungültiges eigenes Ziel.');

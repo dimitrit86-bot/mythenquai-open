@@ -1,0 +1,36 @@
+name: Verify Kompass release notes
+on:
+  push:
+    branches: [main]
+    paths: [kompass/**, .github/workflows/kompass-release-notes.yml]
+  pull_request:
+    paths: [kompass/**, .github/workflows/kompass-release-notes.yml]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Verify current release has generated notes and history is retained
+        run: |
+          python3 kompass/release-notes/build.py --check
+          python3 - <<'PYTHON'
+          import json,subprocess
+          from pathlib import Path
+          path='kompass/release-notes/releases.json'
+          current=json.loads(Path(path).read_text())['releases']
+          previous=subprocess.run(['git','show','HEAD^:'+path],capture_output=True,text=True)
+          if previous.returncode==0:
+            older=json.loads(previous.stdout)['releases']
+            missing={r['version'] for r in older}-{r['version'] for r in current}
+            assert not missing,'Existing release notes removed: '+str(missing)
+          print('Release archive is complete for current app version.')
+          PYTHON
+      - name: JavaScript syntax and all regression tests
+        run: |
+          for f in kompass/*.js; do node --check "$f"; done
+          for f in kompass/tests/*.test.js; do node "$f"; done
