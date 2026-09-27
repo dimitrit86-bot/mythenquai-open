@@ -1,0 +1,59 @@
+name: Verify Kompass release archive and profile notifications
+on:
+  push:
+    branches: [kompass-release-notes-v191, main]
+    paths: [kompass/**, tools/apply_release_notes.py, tools/test_release_notes.py, tools/notes_fix.py, .github/workflows/kompass-release-notes.yml]
+  pull_request:
+    paths: [kompass/**, .github/workflows/kompass-release-notes.yml]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare reviewed release integration on staging only
+        if: github.ref == 'refs/heads/kompass-release-notes-v191'
+        run: |
+          python3 tools/apply_release_notes.py
+          python3 tools/notes_fix.py
+          python3 kompass/release-notes/build.py
+      - name: Validate release archive and all calculation regressions
+        run: |
+          python3 kompass/release-notes/build.py --check
+          for f in kompass/*.js; do node --check "$f"; done
+          for f in kompass/tests/*.test.js; do node "$f"; done
+      - name: Prepare browser engines
+        if: github.ref == 'refs/heads/kompass-release-notes-v191'
+        run: |
+          python3 -m pip install playwright
+          python3 -m playwright install --with-deps chromium webkit
+      - name: Chromium profile and offline archive checks
+        if: github.ref == 'refs/heads/kompass-release-notes-v191'
+        env:
+          TEST_BROWSER: chromium
+        run: python3 tools/test_release_notes.py
+      - name: WebKit profile and offline archive checks
+        if: github.ref == 'refs/heads/kompass-release-notes-v191'
+        env:
+          TEST_BROWSER: webkit
+        run: python3 tools/test_release_notes.py
+      - name: Commit tested app sources to staging only
+        if: github.ref == 'refs/heads/kompass-release-notes-v191'
+        run: |
+          git config user.name 'Kompass release verifier'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add kompass/
+          git diff --cached --quiet || git commit -m 'Verify profile release notes and archive [skip ci]'
+          git push origin HEAD:kompass-release-notes-v191
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kompass-release-notes-verification
+          path: |
+            kompass/
+            test-output-notes/
+          retention-days: 7
