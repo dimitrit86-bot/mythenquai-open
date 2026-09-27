@@ -1,0 +1,45 @@
+name: Verify final Kompass food catalogue and preserved text pieces reports
+on:
+  push:
+    branches: [kompass-foods-preserve-v181]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Safely integrate catalogue on latest published features
+        run: python3 tools/apply_foods_v181.py
+      - name: Syntax and all calculation regressions
+        run: |
+          for f in kompass/*.js; do node --check "$f"; done
+          for f in kompass/tests/*.test.js; do node "$f"; done
+      - name: Prepare browsers
+        run: |
+          python3 -m pip install playwright
+          python3 -m playwright install --with-deps chromium webkit
+      - name: Chromium actual text piece catalogue and PDF flows
+        env:
+          TEST_BROWSER: chromium
+        run: python3 tools/test_pieces_v18.py
+      - name: WebKit actual text piece catalogue and PDF flows
+        env:
+          TEST_BROWSER: webkit
+        run: python3 tools/test_pieces_v18.py
+      - name: Preserve verified application on staging branch only
+        run: |
+          git config user.name 'Kompass verifier'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add kompass/ tools/test_pieces_v18.py
+          git diff --cached --quiet || git commit -m 'Verify eight sourced foods while preserving latest custom text piece portions and reports'
+          git push origin HEAD:kompass-foods-preserve-v181
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kompass-v181-final-source-checks
+          path: |
+            kompass/
+            test-output/
+          retention-days: 7
