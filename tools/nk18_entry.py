@@ -97,7 +97,7 @@ with sync_playwright() as play:
   check('Consumed quantity remains separate from table quantity',abs(profiles[ids[0]]['state']['entries'][0]['n']['protein']['value']-3.6)<1e-9)
   history=copy.deepcopy(profiles[ids[0]]['state']['entries'])
   p.reload();p.wait_for_function('window.NK_APP && NK_HOUSEHOLD.id');check('Saved product survives encrypted reload',p.evaluate('id=>NK_APP.getState().foods.find(f=>f.id===id).n.protein',snack_id)==12)
-  nav(p,'search');p.locator('#food-search').fill('Text Test Snack');p.locator(f'#search-results .food-open[data-id="{snack_id}"]').click();p.locator('[data-action="edit-custom-food"]').click()
+  nav(p,'search');p.locator('#food-search').fill('Text Test Snack');p.locator(f'#search-results .food-open[data-id="{snack_id}"]').click();p.locator('#dialog details:has([data-action="edit-custom-food"])>summary').click();p.locator('[data-action="edit-custom-food"]').click()
   paste(p,'pro 100 g\nProtein 5 g');apply(p);p.locator('#custom-undo-text').click();save_product(p)
   check('Undo preserves saved source metadata and history',profiles[ids[0]]['state']['foods'][0]['source']==snack['source'] and profiles[ids[0]]['state']['entries']==history)
 

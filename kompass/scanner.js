@@ -3,7 +3,7 @@
 const fields=[
  ['saturated',/ges[aä]ttigte(?:\s+fetts[aä]uren)?|saturated(?:\s+fat)?|acides gras satur[eé]s|grassi saturi/i,'g'],
  ['sugar',/(?:davon\s+)?zucker|(?:of which\s+)?sugars|sucres|zuccheri/i,'g'],
- ['fiber',/ballaststoffe|(?:dietary\s+)?fibers?|fibres?/i,'g'],
+ ['fiber',/nahrungsfasern|ballaststoffe|(?:dietary\s+)?fibers?|fibres?/i,'g'],
  ['carbs',/kohlenhydrate|carbohydrates?|glucides|carboidrati/i,'g'],
  ['protein',/eiwei(?:ss|ß)|proteine?|prot[eé]ines?/i,'g'],
  ['fat',/fett|(?:total\s+)?fat\b|mati[eè]res grasses|grassi/i,'g'],
@@ -18,14 +18,19 @@ const fields=[
  ['zinc',/zink|zinc(?:o)?/i,'mg'],['iodine',/jod|iodine|iode|iodio/i,'µg'],['selenium',/selen(?:ium|io)?/i,'µg']
 ];
 function quantities(s){return [...s.matchAll(/(?<![\d.,+−-])([<≤]?)\s*(\d+(?:[.,]\d+)?)\s*(kcal|kJ|mg|[µμu]g|g)\b/gi)].map(m=>({value:Number(m[2].replace(',','.')),unit:m[3].toLowerCase().replace(/[μu]g/,'µg'),less:!!m[1],raw:m[0].trim()}));}
+function readableLines(text){
+ const labels='(?:Brennwert|Energie|Energy|Energia|davon\\s+ges[aä]ttigte(?:\\s+Fetts[aä]uren)?|ges[aä]ttigte\\s+Fetts[aä]uren|saturated\\s+fat|of\\s+which\\s+sugars|davon\\s+Zucker|Zucker|Nahrungsfasern|Ballaststoffe|Kohlenhydrate|Carbohydrates?|Eiwei(?:ss|ß)|Proteine?|Fett|Fat|Salz|Salt|Vitamin[ea]?\\s*[ABCDEK]\\s*\\d*|Calcium|Kalzium|Magnesium|Kalium|Natrium|Eisen|Zink|Jod|Selen|Biotin|Niacin|Pantothensäure|Folsäure|Folat)';
+ const re=new RegExp('(^|[^\\p{L}\\p{N}])('+labels+')(?=$|[^\\p{L}\\p{N}])','gimu');
+ return String(text).replace(/\r/g,'').replace(re,(_,gap,label)=>gap+'\n'+label).split('\n').map(x=>x.trim()).filter(Boolean);
+}
 function parse(text,column='first'){
- const n={},q={},warnings=[],lines=String(text).replace(/\r/g,'').split('\n').filter(Boolean);let basis=/100\s*m\s*l\b/i.test(text)?'ml':'g';
+ const n={},q={},warnings=[],lines=readableLines(text);let basis=/100\s*m\s*l\b/i.test(text)?'ml':'g';
  if(!/100\s*(?:g|ml)\b/i.test(text))warnings.push('Bezugsmenge nicht erkannt. Vor dem Speichern auf 100 g oder 100 ml umrechnen.');
- const expectedColumns=root.NK_PORTIONS?.hints(text).length||1;
+ const expectedColumns=root.NK_PORTIONS?.hints(lines.join("\n")).length||1;
  const pick=a=>{if(column==='last'&&expectedColumns>1&&a.length<expectedColumns){warnings.push('Eine Zeile lässt sich der letzten Wertespalte nicht sicher zuordnen und bleibt unbekannt.');return undefined;}return column==='last'?a[a.length-1]:a[0];};
  for(let i=0;i<lines.length;i++){
   let line=lines[i];if(!quantities(line).length&&/^\s*[<≤]?\s*\d/.test(lines[i+1]||''))line+=' '+lines[i+1];
-  if(/brennwert|energie|energy|energia|kcal|\bkj\b/i.test(line))for(const [key,u] of [['energy','kcal'],['energyKJ','kj']]){const v=pick(quantities(line).filter(v=>v.unit===u));if(v){if(v.less){n[key]=null;q[key]=v.raw;}else n[key]=v.value;}}
+  if(!/referenz|reference|erwachsen|adult|tagesbedarf|daily/i.test(line)&&(/brennwert|energie|energy|energia/i.test(line)||n.energy===undefined&&/kcal|\bkj\b/i.test(line)))for(const [key,u] of [['energy','kcal'],['energyKJ','kj']]){const v=pick(quantities(line).filter(v=>v.unit===u));if(v){if(v.less){n[key]=null;q[key]=v.raw;}else n[key]=v.value;}}
   for(const [key,re,unit] of fields){const match=line.match(re);if(!match)continue;const vals=quantities(line.slice(match.index+match[0].length)).filter(v=>!['kj','kcal'].includes(v.unit));const v=pick(vals);if(!v)break;if(v.less){n[key]=null;q[key]=v.raw;warnings.push(key+': Grenzwert, keine exakte Null.');}else{const scale={g:1,mg:0.001,'µg':0.000001};n[key]=v.value*scale[v.unit]/scale[unit];}break;}
  }
  if(n.energy===undefined&&Number.isFinite(n.energyKJ)){n.energy=Math.round(n.energyKJ/4.184*10)/10;warnings.push('kcal aus kJ umgerechnet.');}

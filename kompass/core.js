@@ -1,7 +1,7 @@
 /* Nährstoff-Kompass calculation core. No network, no UI, no silent missing-value imputation. */
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.NK=factory();})(typeof globalThis!=='undefined'?globalThis:this,function(){
  'use strict';
- const VERSION='1.7.0', SCHEMA=1;
+ const VERSION='1.8.0', SCHEMA=1;
  const GOALS=typeof module==='object'&&module.exports?require('./macro-goals.js'):globalThis.NK_MACROS;
  const clone=x=>JSON.parse(JSON.stringify(x));
  function number(v,{optional=false,min=0,max=1e9}={}){
