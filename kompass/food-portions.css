@@ -3,3 +3,7 @@
 .custom-import-actions{padding:14px;margin:0 0 16px;background:var(--soft,#eff6f1);border-radius:12px}.custom-import-actions .actions{display:flex;flex-wrap:wrap;gap:8px}.custom-import-actions .button{font-size:13px;min-height:44px}.custom-import-actions p{font-size:12px;line-height:1.5;margin:10px 0 0}
 #custom-piece-summary{min-height:22px}.product-portions .field{min-width:0}.product-portions input{min-width:0;width:100%}.ingredient-row .piece-tag{margin:8px 0}.search-count{display:flex;gap:8px;flex-wrap:wrap}.food-label{min-width:0}.food-side{flex-shrink:0}
 @media(max-width:520px){.product-portions .form-grid{grid-template-columns:minmax(0,1fr)}.custom-import-actions .button{flex:1}.product-portions{padding:13px}.food-label strong{overflow-wrap:anywhere}}
+
+/* Preserve full native choices while constraining the painted selection in WebKit. */
+#food-form .field,#ingredients .field{min-width:0}
+#food-form select,#ingredients select{width:100%;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;appearance:none;-webkit-appearance:none;padding-right:28px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23215a48' stroke-width='1.7'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:12px 8px}
