@@ -1,0 +1,52 @@
+name: Verify Kompass cups and complete recipe paste
+on:
+  push:
+    branches: [kompass-cups-recipes-v110]
+    paths: [tools/cups110/**, tools/apply_cups110.py, tools/cups_followup.py, .github/workflows/kompass-cups-v110.yml]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reconstruct reviewed source and release archive
+        run: |
+          python3 tools/apply_cups110.py
+          if test -f tools/cups_followup.py; then python3 tools/cups_followup.py; fi
+          python3 kompass/release-notes/build.py
+          python3 kompass/release-notes/build.py --check
+      - name: Syntax and all calculation regressions
+        run: |
+          for f in kompass/*.js; do node --check "$f"; done
+          for f in kompass/tests/*.test.js; do node "$f"; done
+      - name: Install browser test engines
+        run: |
+          python3 -m pip install playwright
+          python3 -m playwright install --with-deps chromium webkit
+      - name: Chromium recipe and volume integration with synthetic profiles
+        env:
+          TEST_BROWSER: chromium
+        run: python3 tools/test_cups_recipes.py
+      - name: WebKit recipe and volume integration with synthetic profiles
+        env:
+          TEST_BROWSER: webkit
+        run: python3 tools/test_cups_recipes.py
+      - name: Commit verified application source to staging only
+        run: |
+          git config user.name 'Kompass verifier'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add kompass/ tools/test_cups_recipes.py
+          git diff --cached --quiet || git commit -m 'Verify cups and complete recipe paste [skip ci]'
+          git push origin HEAD:kompass-cups-recipes-v110
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kompass-cups-recipes-verification
+          path: |
+            kompass/
+            tools/cups110/
+            tools/test_cups_recipes.py
+            test-output-cups/
+          retention-days: 7
