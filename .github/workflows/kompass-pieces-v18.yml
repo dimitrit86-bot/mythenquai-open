@@ -1,0 +1,64 @@
+name: Verify Kompass pieces text import and preserved PDF reports
+on:
+  push:
+    branches: [kompass-food-portions-v18]
+    paths: [kompass/**, tools/apply_nk18.py, tools/nk18-hashes.json, tools/nk18_browser.py, tools/nk18_followup.py, .github/workflows/kompass-pieces-v18.yml]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply guarded public client changes
+        run: |
+          python3 tools/apply_nk18.py
+          if test -f tools/nk18_followup.py; then python3 tools/nk18_followup.py; fi
+          mkdir -p test-output
+      - name: Syntax and all calculation regressions
+        run: |
+          for f in kompass/*.js; do node --check "$f"; done
+          for f in kompass/tests/*.test.js; do node "$f"; done
+      - name: Retrieve existing report regression fixture from verified commit
+        run: |
+          git show 2f5fbb589485b633374f5b31baad51612e384c79:tools/test_visual_reports.py > tools/nk18_reports.py
+      - name: Install isolated test browsers and PDF reader
+        run: |
+          python3 -m pip install playwright pypdf
+          python3 -m playwright install --with-deps chromium webkit
+      - name: Chromium product and piece workflows with synthetic household
+        env:
+          TEST_BROWSER: chromium
+        run: python3 tools/nk18_browser.py
+      - name: WebKit product and piece workflows with synthetic household
+        env:
+          TEST_BROWSER: webkit
+        run: python3 tools/nk18_browser.py
+      - name: Chromium existing visual reports and actual PDF download regression
+        env:
+          TEST_BROWSER: chromium
+        run: python3 tools/nk18_reports.py
+      - name: WebKit existing visual reports and actual PDF download regression
+        env:
+          TEST_BROWSER: webkit
+        run: python3 tools/nk18_reports.py
+      - name: Preserve verified source on staging branch only
+        run: |
+          git config user.name 'Kompass verifier'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add kompass/ tools/nk18_reports.py
+          git diff --cached --quiet || git commit -m 'Verify piece portions and in-form nutrition import with preserved report PDF exports'
+          git push origin HEAD:kompass-food-portions-v18
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kompass-v18-source-and-tests
+          path: |
+            kompass/
+            test-output/
+            tools/nk18_browser.py
+            tools/nk18_reports.py
+          retention-days: 7
