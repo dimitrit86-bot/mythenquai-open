@@ -1,0 +1,4 @@
+.piece-fields,.text-import-launch,.piece-banner{border:1px solid var(--border,#dce6dd);border-radius:14px;padding:14px;margin:14px 0;background:var(--soft,#eff5ef)}
+.piece-fields .field,.text-import-launch .field{min-width:0}.piece-fields input,.piece-fields select{width:100%;min-width:0;font-size:16px;min-height:44px;box-sizing:border-box}
+.piece-banner{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.piece-banner small{flex-basis:100%;line-height:1.5}.piece-amount{font-weight:650;line-height:1.5;overflow-wrap:anywhere}#custom-piece-preview{padding:10px 0;font-weight:600;line-height:1.6;overflow-wrap:anywhere}.text-import-launch p{margin:8px 0}.food-label small{overflow-wrap:anywhere}
+@media(max-width:520px){.piece-fields .form-grid{grid-template-columns:minmax(0,1fr)}.piece-banner .button{width:100%}.text-import-launch .button{width:100%}}
