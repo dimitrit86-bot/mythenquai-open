@@ -83,7 +83,7 @@ function photoTransfer(f,existing){
  else{stop();dlg.close();if(existing)root.NK_APP.openFood(f);else root.NK_APP.reviewFood(f);}
 }
 async function identifyProduct(){if(scanBusy||!image)return;const generation=scanGeneration;controls?.stop();controls=null;$('#barcode-video').hidden=true;$('#scan-review').hidden=true;
- try{await root.NK_PHOTO_PRODUCT.identify({image,load,readText:readPhotoText,current:()=>scanCurrent(generation),transfer:photoTransfer});}
+ try{await root.NK_PHOTO_PRODUCT.identify({image,load,readText:readPhotoText,current:()=>scanCurrent(generation),transfer:photoTransfer});if(scanCurrent(generation))message('');}
  catch(e){if(scanCurrent(generation))message('Produktsuche nicht möglich: '+e.message);}
 }
 function review(){

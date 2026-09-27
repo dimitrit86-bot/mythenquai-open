@@ -73,6 +73,7 @@ with sync_playwright() as play:
   identify(p)
   check('Photo text automatically starts name lookup',any(x[1]=={'action':'search','query':'Phototest Cocoa'} for x in requests))
   check('Recognition did not save a product',p.evaluate('NK_APP.getState().foods.length')==0)
+  p.wait_for_function('!document.querySelector("#scan-status").textContent.includes("geladen")');check('Completed product search clears stale OCR progress')
   p.locator('[data-photo-match]').first.click();check('External 100g/ml basis must be chosen',p.locator('#photo-product-basis').input_value()=='')
   p.locator('#photo-product-confirm button[type=submit]').click();check('Unconfirmed result cannot transfer',p.locator('#scan-dialog').is_visible())
   p.locator('#photo-product-basis').select_option('g');p.locator('#photo-product-checked').check();p.locator('#photo-product-confirm button[type=submit]').click()
