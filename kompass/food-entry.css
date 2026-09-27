@@ -1,0 +1,9 @@
+.custom-text-panel{margin:18px 0;padding:15px;border:1px solid #c8dccf;border-radius:14px;background:#f1f7f2}
+.custom-text-panel>summary{font-weight:650;cursor:pointer;min-height:30px;color:#215a48}
+.custom-text-panel textarea{width:100%;font-size:16px;box-sizing:border-box;margin:6px 0 10px;line-height:1.5;min-height:125px}
+.custom-text-panel .form-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.custom-text-panel .field{min-width:0}.custom-text-panel select{max-width:100%;min-width:0;appearance:none;white-space:nowrap;text-overflow:ellipsis}
+.text-table-head,.text-table-row{display:grid;grid-template-columns:1.2fr 1fr .8fr;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #d9e5db}
+.text-table-head{font-size:11px;font-weight:650}.text-table-row{font-size:12px}.text-table-row label{overflow-wrap:anywhere}.text-table-row small{display:block}.text-table-row input{width:100%;min-width:0;font-size:16px;padding:8px;box-sizing:border-box}.text-table-row output{font-variant-numeric:tabular-nums;font-weight:650;overflow-wrap:anywhere}
+.food-basics{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0}.food-basics .chip{min-height:42px}.search-filter-note{padding:10px;background:#f1f7f2;border-radius:10px;font-size:12px;margin:10px 0}.search-filter-note button{min-height:40px;margin-left:8px}
+@media(max-width:430px){.custom-text-panel{padding:12px}.custom-text-panel .form-grid{grid-template-columns:minmax(0,1fr)}.text-table-row,.text-table-head{gap:7px}.custom-text-panel .button{width:100%;white-space:normal}}

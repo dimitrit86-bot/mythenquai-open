@@ -1,0 +1,58 @@
+name: Verify Kompass inline text foods and report PDF regressions
+on:
+  push:
+    branches: [kompass-food-text-v18]
+    paths: [kompass/**, tools/nk18*, tools/apply_nk18.py, .github/workflows/kompass-food-text-v18.yml]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply exact client changes without touching user state
+        run: |
+          python3 tools/apply_nk18.py
+          if test -f tools/nk18_followup.py; then python3 tools/nk18_followup.py; fi
+          mkdir -p test-output
+          git show 2f5fbb589485b633374f5b31baad51612e384c79:tools/test_visual_reports.py > tools/nk18_reports.py
+      - name: Syntax and all calculation regressions
+        run: |
+          for f in kompass/*.js; do node --check "$f"; done
+          for f in kompass/tests/*.test.js; do node "$f"; done
+      - name: Prepare real browser tests
+        run: |
+          python3 -m pip install playwright pypdf
+          python3 -m playwright install --with-deps chromium webkit
+      - name: Chromium food entry and PDF regressions with synthetic profiles
+        env:
+          TEST_BROWSER: chromium
+        run: |
+          python3 tools/nk18_entry.py
+          python3 tools/nk18_reports.py
+      - name: WebKit food entry and PDF regressions with synthetic profiles
+        env:
+          TEST_BROWSER: webkit
+        run: |
+          python3 tools/nk18_entry.py
+          python3 tools/nk18_reports.py
+      - name: Commit tested sources to review branch only
+        run: |
+          git config user.name 'Kompass verifier'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add kompass/ tools/nk18_entry.py tools/nk18_reports.py
+          git diff --cached --quiet || git commit -m 'Verify inline nutrition text import food search and unchanged report PDFs'
+          git push origin HEAD:kompass-food-text-v18
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kompass-v18-source-tests
+          path: |
+            kompass/
+            test-output/
+            tools/nk18_entry.py
+            tools/nk18_reports.py
+          retention-days: 7
