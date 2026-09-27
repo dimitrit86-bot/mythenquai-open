@@ -1,7 +1,8 @@
 /* Nährstoff-Kompass calculation core. No network, no UI, no silent missing-value imputation. */
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.NK=factory();})(typeof globalThis!=='undefined'?globalThis:this,function(){
  'use strict';
- const VERSION='1.7.0', SCHEMA=1;
+ const PIECES=typeof module==='object'&&module.exports?require('./product-portions.js'):globalThis.NK_PIECES;
+ const VERSION='1.8.0', SCHEMA=1;
  const GOALS=typeof module==='object'&&module.exports?require('./macro-goals.js'):globalThis.NK_MACROS;
  const clone=x=>JSON.parse(JSON.stringify(x));
  function number(v,{optional=false,min=0,max=1e9}={}){
@@ -12,6 +13,7 @@
  }
  function positive(v){return number(v,{min:0.000001});}
  function factor(food,quantity,unit,density){
+  if(unit==='piece')return PIECES.factor(food,quantity);
   let q=positive(quantity),dimension;
   if(unit==='kg'){q*=1000;dimension='g';}else if(unit==='g')dimension='g';
   else if(unit==='l'){q*=1000;dimension='ml';}else if(unit==='dl'){q*=100;dimension='ml';}else if(unit==='ml')dimension='ml';
@@ -90,6 +92,7 @@
  function validateFood(f,keys){
   if(!f||typeof f.name!=='string'||!f.name.trim()||f.name.length>240)throw Error('Ungültiger Lebensmittelname.');
   if(typeof f.id!=='string'||!/^[A-Za-z0-9_-]{1,100}$/.test(f.id)||!['g','ml'].includes(f.basis)||!f.n||typeof f.n!=='object')throw Error('Ungültiges Lebensmittel.');
+  PIECES.validate(f);
   if(f.density!==null&&f.density!==undefined)positive(f.density);
   for(const k of keys)if(f.n[k]!==null&&f.n[k]!==undefined&&(!Number.isFinite(f.n[k])||f.n[k]<0||f.n[k]>1e9))throw Error('Ungültiger Nährwert.');
  }
