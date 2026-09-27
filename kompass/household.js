@@ -78,7 +78,7 @@ async function afterLogin(){
  const id=window.NK_DEVICE.preferred(profiles,localStorage.getItem(LAST));if(id)await choose(id);else manager(true);
 }
 async function openApp(){
- gate.hidden=true;$('#app').hidden=false;if(!started){await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='app.js?v=1.7.0';s.onload=resolve;s.onerror=()=>reject(Error('App konnte nicht geladen werden. Bitte erneut laden.'));document.body.append(s);});started=true;}else window.NK_APP.loadState(JSON.parse(raw));
+ gate.hidden=true;$('#app').hidden=false;if(!started){await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='app.js?v=1.8.0';s.onload=resolve;s.onerror=()=>reject(Error('App konnte nicht geladen werden. Bitte erneut laden.'));document.body.append(s);});started=true;}else window.NK_APP.loadState(JSON.parse(raw));
  setStatus(blocked?'Lokal gespeichert · Abgleich prüfen':pending?'Noch nicht synchronisiert':'Synchronisiert');document.dispatchEvent(new Event('nk-profile-loaded'));
 }
 async function choose(id){
