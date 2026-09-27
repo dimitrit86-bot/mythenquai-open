@@ -1,0 +1,58 @@
+name: Verify Kompass food search text entry and report PDF preservation
+on:
+  push:
+    branches: [kompass-food-entry-v18]
+    paths: [tools/nk18/**, tools/apply_nk18.py, tools/nk18_followup.py, .github/workflows/kompass-food-entry-v18.yml]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply verified source bundle
+        run: |
+          python3 tools/apply_nk18.py
+          if test -f tools/nk18_followup.py; then python3 tools/nk18_followup.py; fi
+      - name: Syntax and complete calculation regression suite
+        run: |
+          for f in kompass/*.js; do node --check "$f"; done
+          for f in kompass/tests/*.test.js; do node "$f"; done
+      - name: Install browsers and PDF inspection dependency
+        run: |
+          python3 -m pip install playwright pypdf
+          python3 -m playwright install --with-deps chromium webkit
+      - name: Chromium food entry and search with synthetic household
+        env:
+          TEST_BROWSER: chromium
+        run: python3 kompass/tests/test_food_entry.py
+      - name: WebKit food entry and search with synthetic household
+        env:
+          TEST_BROWSER: webkit
+        run: python3 kompass/tests/test_food_entry.py
+      - name: Chromium reports and actual PDF download regression
+        env:
+          TEST_BROWSER: chromium
+        run: python3 kompass/tests/test_visual_reports.py
+      - name: WebKit reports and actual PDF download regression
+        env:
+          TEST_BROWSER: webkit
+        run: python3 kompass/tests/test_visual_reports.py
+      - name: Commit verified app only on staging branch
+        run: |
+          git config user.name 'Kompass verifier'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add kompass/
+          git diff --cached --quiet || git commit -m 'Verify own-product text and photo entry, egg search and eight sourced foods; preserve reports and PDF exports'
+          git push origin HEAD:kompass-food-entry-v18
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kompass-v18-verified-source
+          path: |
+            kompass/
+            test-output/
+          retention-days: 7
