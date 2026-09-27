@@ -51,6 +51,9 @@ with sync_playwright() as play:
  ctx.route('**/*',intercept);p=ctx.new_page();p.set_default_timeout(15000);p.on('pageerror',lambda e:errors.append(str(e)))
  try:
   p.goto(URL);p.locator('#gate-password').fill('synthetic-password');p.locator('#gate-form button[type="submit"]').click();choose(p,D)
+  check('Eight new manufacturer records loaded',p.evaluate('NK_ADDITIONAL_FOODS.count===8 && NK_DATA.foods.length===1305'))
+  nav(p,'search');p.locator('#food-search').fill('planted.chicken Nature');p.locator('#search-results [data-action="food-pick"][data-id="label-planted-chicken-natur"]').click();p.locator('#food-qty').fill('50')
+  check('New product quantity preview uses declared protein','12' in p.locator('#food-preview').inner_text());p.locator('#dialog [data-action="close-dialog"]').click();p.locator('#food-search').fill('')
   new_food(p,'Testriegel',30,label='Riegel');p.locator('[data-action="custom-text"]').click()
   check('Text reader reachable from own product',p.locator('#scan-text-section').get_attribute('open') is not None)
   p.locator('#nutrition-text').fill('pro 30 g\nEnergie 150 kcal\nFett 9 g\ndavon gesättigte Fettsäuren 1.5 g\nKohlenhydrate 15 g\ndavon Zucker 0 g\nNahrungsfasern 2 g\nEiweiss 3 g\nSalz 0.1 g');p.locator('#parse-text').click()
