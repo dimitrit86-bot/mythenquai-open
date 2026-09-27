@@ -1,0 +1,52 @@
+name: Verify sourced cup and piece reference estimates
+on:
+  push:
+    branches: [kompass-reference-measures-v111]
+    paths: [tools/nk111/**, tools/apply_measures.py, tools/measures_followup.py, .github/workflows/kompass-measures-v111.yml]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply reviewed reference integration
+        run: |
+          python3 tools/apply_measures.py
+          if test -f tools/measures_followup.py; then python3 tools/measures_followup.py; fi
+          python3 kompass/release-notes/build.py
+      - name: Syntax, source-reference and all calculation regressions
+        run: |
+          for f in kompass/*.js; do node --check "$f"; done
+          for f in kompass/tests/*.test.js; do node "$f"; done
+          python3 kompass/release-notes/build.py --check
+      - name: Prepare browser engines
+        run: |
+          python3 -m pip install playwright
+          python3 -m playwright install --with-deps chromium webkit
+      - name: Chromium actual UI with synthetic household only
+        env:
+          TEST_BROWSER: chromium
+        run: python3 tools/test_measures.py
+      - name: WebKit actual UI with synthetic household only
+        env:
+          TEST_BROWSER: webkit
+        run: python3 tools/test_measures.py
+      - name: Commit verified app on staging only
+        run: |
+          git config user.name 'Kompass verifier'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add kompass/ tools/test_measures.py
+          git diff --cached --quiet || git commit -m 'Verify approximate kitchen references and edible piece weights [skip ci]'
+          git push origin HEAD:kompass-reference-measures-v111
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kompass-household-measures-verification
+          path: |
+            kompass/
+            test-output-measures/
+            tools/test_measures.py
+            tools/nk111/
+          retention-days: 7
