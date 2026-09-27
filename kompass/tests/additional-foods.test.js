@@ -2,7 +2,7 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
 const root=path.resolve(__dirname,'..'),ctx={console,URL};ctx.window=ctx;vm.createContext(ctx);
 function load(f){vm.runInContext(fs.readFileSync(path.join(root,f),'utf8'),ctx,{filename:f});}
-for(const f of ['data.js','macro-goals.js','product-portions.js','food-search.js','core.js','veggie-data.js','catalog.js'])load(f);
+for(const f of ['data.js','macro-goals.js','product-portions.js','food-search.js','cup-measures.js','core.js','veggie-data.js','catalog.js'])load(f);
 const before=JSON.stringify(ctx.NK_DATA.foods),len=ctx.NK_DATA.foods.length;load('additional-foods.js');
 const extra=ctx.NK_ADDITIONAL_FOODS.foods,keys=ctx.NK_DATA.nutrients.map(n=>n.key);let count=0;
 function check(n,fn){fn();console.log('PASS',n);count++;}

@@ -1,6 +1,7 @@
 /* Nährstoff-Kompass calculation core. No network, no UI, no silent missing-value imputation. */
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.NK=factory();})(typeof globalThis!=='undefined'?globalThis:this,function(){
  'use strict';
+ const CUPS=typeof module==='object'&&module.exports?require('./cup-measures.js'):globalThis.NK_CUPS;
  const PIECES=typeof module==='object'&&module.exports?require('./product-portions.js'):globalThis.NK_PIECES;
  const VERSION='1.8.0', SCHEMA=1;
  const RELEASES=typeof module==='object'&&module.exports?require('./release-notes-core.js'):globalThis.NK_RELEASE_CORE;
@@ -14,8 +15,9 @@
  }
  function positive(v){return number(v,{min:0.000001});}
  function factor(food,quantity,unit,density){
-  if(unit==='piece')return PIECES.factor(food,quantity);
-  let q=positive(quantity),dimension;
+  if(CUPS.isCup(unit))return CUPS.factor(food,quantity,unit,density);
+  if(unit==='piece')return PIECES.factor(food,CUPS.amount(quantity));
+  let q=CUPS.amount(quantity),dimension;
   if(unit==='kg'){q*=1000;dimension='g';}else if(unit==='g')dimension='g';
   else if(unit==='l'){q*=1000;dimension='ml';}else if(unit==='dl'){q*=100;dimension='ml';}else if(unit==='ml')dimension='ml';
   else throw Error('Unbekannte Mengeneinheit.');
@@ -93,7 +95,7 @@
  function validateFood(f,keys){
   if(!f||typeof f.name!=='string'||!f.name.trim()||f.name.length>240)throw Error('Ungültiger Lebensmittelname.');
   if(typeof f.id!=='string'||!/^[A-Za-z0-9_-]{1,100}$/.test(f.id)||!['g','ml'].includes(f.basis)||!f.n||typeof f.n!=='object')throw Error('Ungültiges Lebensmittel.');
-  PIECES.validate(f);
+  PIECES.validate(f);CUPS.validate(f);
   if(f.density!==null&&f.density!==undefined)positive(f.density);
   for(const k of keys)if(f.n[k]!==null&&f.n[k]!==undefined&&(!Number.isFinite(f.n[k])||f.n[k]<0||f.n[k]>1e9))throw Error('Ungültiger Nährwert.');
  }
