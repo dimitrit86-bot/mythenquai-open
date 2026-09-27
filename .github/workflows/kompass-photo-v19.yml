@@ -1,0 +1,50 @@
+name: Verify dual photo nutrition flow
+on:
+  push:
+    branches: [kompass-photo-dual-v19]
+    paths: [tools/photo_upgrade.py, tools/test_photo.py, tools/photo_followup.py, kompass/photo-product.js, kompass/photo-product.css, kompass/tests/photo-product.test.js, .github/workflows/kompass-photo-v19.yml]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply guarded scanner integration
+        run: |
+          python3 tools/photo_upgrade.py
+          if test -f tools/photo_followup.py; then python3 tools/photo_followup.py; fi
+      - name: All existing and photo unit tests
+        run: |
+          for f in kompass/*.js; do node --check "$f"; done
+          for f in kompass/tests/*.test.js; do node "$f"; done
+      - name: Prepare browsers
+        run: |
+          python3 -m pip install playwright
+          python3 -m playwright install --with-deps chromium webkit
+      - name: Chromium synthetic household plus actual local OCR fixture
+        env:
+          TEST_BROWSER: chromium
+          REAL_OCR: '1'
+        run: python3 tools/test_photo.py
+      - name: WebKit synthetic household integration
+        env:
+          TEST_BROWSER: webkit
+        run: python3 tools/test_photo.py
+      - name: Commit verified application changes to staging only
+        run: |
+          git config user.name 'Kompass verifier'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add kompass/ tools/test_photo.py
+          git diff --cached --quiet || git commit -m 'Verify photo product recognition and nutrition-table paths with preserved diary data'
+          git push origin HEAD:kompass-photo-dual-v19
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kompass-photo-v19-verified
+          path: |
+            kompass/
+            test-output/
+            tools/test_photo.py
+          retention-days: 7
