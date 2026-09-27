@@ -43,7 +43,7 @@ def context(browser,stub=True):
  if stub:c.add_init_script(STUB)
  def route(r):
   if '/functions/v1/' in r.request.url:return api(r)
-  if r.request.url.startswith(URL):return r.continue_()
+  if r.request.url.startswith(URL) or r.request.url.startswith('blob:'+URL.split('/kompass/')[0]+'/'):return r.continue_()
   unexpected.append(r.request.url);return r.abort()
  c.route('**/*',route);return c
 
