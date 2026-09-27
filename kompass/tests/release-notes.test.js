@@ -1,7 +1,8 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
-const R=require('../release-notes-core.js'),D=require('../release-notes/catalog.js'),C=require('../core.js'),S=require('../sync-core.js');
+const R=require('../release-notes-core.js'),LIVE=require('../release-notes/catalog.js'),C=require('../core.js'),S=require('../sync-core.js');
 let passed=0;function test(name,fn){fn();passed++;console.log('PASS',name);}
+const D={schema:1,releases:LIVE.releases.filter(r=>['1.9.0','1.9.1'].includes(r.version))};
 const copy=C.clone,b=C.initial();
 test('v1.9 baseline normalized',()=>assert.equal(R.normalize('1.9'),'1.9.0'));
 test('Semver numerically orders 1.10 after 1.9',()=>assert.equal(R.compare('1.10.0','1.9.9'),1));
@@ -20,8 +21,8 @@ test('Out-of-order manifest sorted without mutation',()=>{const before=JSON.stri
 test('Duplicate entries rejected',()=>{const d=copy(D);d.releases.push(d.releases[0]);assert.throws(()=>R.validate(d));});
 test('No backfill before v1.9 allowed',()=>{const d=copy(D);d.releases.push({...copy(D.releases[0]),version:'1.8.9'});assert.throws(()=>R.validate(d));});
 test('Incomplete changelog rejected',()=>assert.throws(()=>R.validate({schema:1,releases:[{version:'1.9.0'}]})));
-test('Current app has release notes',()=>assert.ok(D.releases.some(r=>r.version===JSON.parse(fs.readFileSync(path.join(__dirname,'../version.json'))).version)));
-test('Markdown available for each release',()=>D.releases.forEach(r=>assert.ok(fs.existsSync(path.join(__dirname,'../release-notes/v'+r.version+'.md')))));
+test('Current app has release notes',()=>assert.ok(LIVE.releases.some(r=>r.version===JSON.parse(fs.readFileSync(path.join(__dirname,'../version.json'))).version)));
+test('Markdown available for each release',()=>LIVE.releases.forEach(r=>assert.ok(fs.existsSync(path.join(__dirname,'../release-notes/v'+r.version+'.md')))));
 test('Old profile without marker remains identical',()=>assert.deepEqual(C.validateState(copy(b),[]),b));
 test('Malformed marker removed without blocking diary',()=>{const s=copy(b);s.profile.releaseNotesSeen={bad:true};assert.deepEqual(C.validateState(s,[]),b);});
 test('Valid marker survives state validation',()=>{const s=copy(b);s.profile.releaseNotesSeen='1.9';assert.equal(C.validateState(s,[]).profile.releaseNotesSeen,'1.9.0');});

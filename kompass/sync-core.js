@@ -1,6 +1,7 @@
 /* Pure three-way reconciliation. No network, storage, credentials or mutations. */
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.NK_SYNC=factory();})(typeof globalThis!=='undefined'?globalThis:this,function(){
  'use strict';
+ const RELEASES=typeof module==='object'&&module.exports?require('./release-notes-core.js'):globalThis.NK_RELEASE_CORE;
  const clone=x=>x===undefined?undefined:JSON.parse(JSON.stringify(x));
  const equal=(a,b)=>stable(a)===stable(b);
  function stable(x){if(x===undefined)return 'undefined';if(x===null||typeof x!=='object')return JSON.stringify(x);if(Array.isArray(x))return '['+x.map(stable).join(',')+']';return '{'+Object.keys(x).sort().map(k=>JSON.stringify(k)+':'+stable(x[k])).join(',')+'}';}
@@ -30,8 +31,11 @@
   const out=clone(local);out.schema=1;
   for(const key of ['entries','recipes','foods'])out[key]=records(key);
   const lp={...local.profile},rp={...remote.profile},bp=base?{...base.profile}:null;
+  const readVersion=RELEASES.highest(bp?.releaseNotesSeen,lp.releaseNotesSeen,rp.releaseNotesSeen);
+  delete lp.releaseNotesSeen;delete rp.releaseNotesSeen;if(bp)delete bp.releaseNotesSeen;
   delete lp.manual;delete rp.manual;if(bp)delete bp.manual;
   out.profile=object(bp,lp,rp,'profile');out.profile.manual=object(base?.profile?.manual,local.profile.manual,remote.profile.manual,'profile.manual');
+  if(readVersion)out.profile.releaseNotesSeen=readVersion;
   out.days=object(base?.days,local.days,remote.days,'days');
   const bFav=new Set(base?.favorites||[]),lFav=new Set(local.favorites),rFav=new Set(remote.favorites);
   out.favorites=[...new Set([...lFav,...rFav])].filter(id=>legacy||!bFav.has(id)||lFav.has(id)&&rFav.has(id));
