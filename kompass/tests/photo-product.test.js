@@ -1,0 +1,24 @@
+'use strict';
+const assert=require('node:assert/strict'),P=require('../photo-product.js');let passed=0;
+function test(name,fn){fn();passed++;console.log('PASS',name);}
+test('EAN13 valid',()=>assert.equal(P.barcode('4006381333931'),'4006381333931'));
+test('EAN13 invalid check digit',()=>assert.equal(P.barcode('4006381333932'),''));
+test('Whitespace barcode',()=>assert.equal(P.barcode('4 006381 333931'),'4006381333931'));
+test('URL not a product barcode',()=>assert.equal(P.barcode('https://x.invalid'),''));
+test('All zero rejects',()=>assert.equal(P.barcode('0000000000000'),''));
+test('UPC valid',()=>assert.equal(P.barcode('036000291452'),'036000291452'));
+test('EAN8 valid',()=>assert.equal(P.barcode('96385074'),'96385074'));
+test('No numeric manufacture date as OCR query',()=>assert.equal(P.suggest('20260927'),''));
+test('Packaging name excludes claims and table',()=>assert.equal(P.suggest('REDEFINE\nFlank Steak\n200 g\nvegan\nNährwerte pro 100 g\nFett 6,6 g\nEiweiss 26 g'),'REDEFINE Flank Steak'));
+test('High Protein variant retained',()=>assert.equal(P.suggest('Alpro\nHigh Protein\nChocolate\n500 ml'),'Alpro High Protein Chocolate'));
+test('No query from nutrition table alone',()=>assert.equal(P.suggest('Nährwerte pro 100 g\nEnergie 188 kcal\nFett 6 g\nEiweiss 26 g\nSalz 1 g'),''));
+test('Remove website and email',()=>assert.equal(P.suggest('Brand\nOriginal\nwww.brand.ch\nhello@example.com'),'Brand Original'));
+test('Duplicated OCR lines collapsed',()=>assert.equal(P.suggest('ALPRO\nalpro\nHafer'),'ALPRO Hafer'));
+test('Query bounded',()=>assert.ok(P.suggest(('long '.repeat(500)+'\n').repeat(100)).length<=120));
+const foods=[{id:'a',name:'Alpro Hafer Ohne Zucker'},{id:'b',name:'Alpro Soja Natur'},{id:'off-4006381333931',name:'Unrelated'}];
+test('Full variant scores first',()=>assert.equal(P.rank(foods,'Alpro Hafer Ohne Zucker')[0].id,'a'));
+test('Barcode exact result regardless name',()=>assert.equal(P.rank(foods,'4006381333931')[0].id,'off-4006381333931'));
+test('No match is empty, not generic best guess',()=>assert.equal(P.rank(foods,'unbekanntes Steak').length,0));
+test('Empty search not whole catalog',()=>assert.equal(P.rank(foods,'').length,0));
+test('Search does not mutate catalog',()=>{const before=JSON.stringify(foods);P.rank(foods,'Alpro');assert.equal(before,JSON.stringify(foods));});
+console.log('TOTAL PHOTO TESTS',passed);
