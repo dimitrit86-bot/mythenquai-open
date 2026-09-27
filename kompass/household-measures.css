@@ -1,0 +1,7 @@
+/* Explicitly estimated household masses; responsive native controls. */
+.measure-fields{padding:15px;border:1px solid #d8d6bc;border-radius:14px;background:#faf8ed;margin:14px 0}
+.measure-fields h3{margin:0 0 12px;font-size:16px}.measure-reference{font-size:12px;line-height:1.7;overflow-wrap:anywhere;color:#5c6048}.measure-reference a{color:#365a43}.measure-warning{font-size:12px;line-height:1.65;padding:11px 13px;border-left:3px solid #aa985f;background:#faf8ed;color:#514c36;border-radius:4px}
+#food-form .field,#food-cup-fields,#food-piece-fields,.paste-row .measure-fields{min-width:0;max-width:100%}
+#food-form select,.paste-row .measure-fields select{appearance:none;-webkit-appearance:none;min-width:0;max-width:100%;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:28px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23215a48' stroke-width='1.7'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:12px 8px}
+.measure-fields[hidden]{display:none}.measure-fields label{overflow-wrap:anywhere}.piece-banner small{line-height:1.5}
+@media(max-width:400px){.measure-fields{padding:12px}.measure-fields .field>label{font-size:12px}.measure-reference{font-size:11px}}

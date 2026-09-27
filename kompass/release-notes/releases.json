@@ -87,6 +87,34 @@
         "Ohne passende Nährwertdaten kannst du eine Zutat ausdrücklich als unbekannt übernehmen und später ersetzen. Sie wird nicht als null gerechnet. Zeilen nur dann als Notiz ausschliessen, wenn sie keine Zutat sind.",
         "Stückportionen, Foto- und Textimport, Reports/PDF sowie der profilbezogene Hinweis auf Neuerungen bleiben erhalten. Der alte Link bleibt gültig."
       ]
+    },
+    {
+      "version": "1.11.0",
+      "date": "2026-09-27",
+      "title": "Cups und Stücke – mit Orientierung.",
+      "summary": "Hinterlegte Referenzgewichte machen das Erfassen leichter. Schätzungen bleiben sichtbar und lassen sich jederzeit durch deine gewogene Menge ersetzen.",
+      "changes": [
+        {
+          "title": "Cups passend zur Zutat",
+          "text": "31 genau zugeordnete Basislebensmittel erhalten Cup- und/oder Stückreferenzen. Bei Cups unterscheiden wir beispielsweise gehackte Zwiebeln, Scheiben, Mehl, trockenen und gekochten Reis. Die aus Cup-Gewicht und Volumen abgeleitete Schüttdichte ist eine Näherung – kein universeller Stoffwert."
+        },
+        {
+          "title": "Gemüse als Stück erfassen",
+          "text": "Für unter anderem Peperoni/Paprika, Zwiebeln, Karotten, Tomaten, Zucchetti und Champignons stehen geschätzte Stückgrössen bereit. Wo in der Quelle vorhanden, wählst du klein, mittel oder gross. Auch Bruchteile sind möglich. Essbaren Anteil beachten, nicht Schalen oder Kerngehäuse mitrechnen."
+        },
+        {
+          "title": "Deine Waage hat Vorrang",
+          "text": "Referenzwerte sind mit «ca.» und «geschätzt» markiert. Überschreibe das Stück- oder Cup-Gewicht für die aktuelle Erfassung oder speichere es dauerhaft als eigene Produktvariante. Bereits hinterlegte eigene Produktwerte werden nicht überschrieben; Quellen und Zustand stehen bei der Auswahl."
+        },
+        {
+          "title": "Auch beim ganzen Rezept",
+          "text": "Beim Hineinkopieren eines Rezepts helfen dieselben Referenzen nach der Zutatenzuordnung. Stückgrösse und Füllweise bleiben auswählbar, Zutatenmengen sind vor Übernahme zu bestätigen. Geschätzte Zutaten werden auch im Rezeptentwurf und bei dessen Erfassung gekennzeichnet."
+        }
+      ],
+      "notes": [
+        "Grundlage sind ausgewählte Haushaltsmasse aus USDA FoodData Central SR Legacy (2018) und ein Haferflockenwert aus der King-Arthur-Backtabelle. Das sind keine gemessenen Schweizer Durchschnittsgrössen. Für die Übertragung der Cup-Gewichte dient 240 ml als ausdrücklich näherungsweise Küchenkonvention; andere Cup-Grössen setzen dieselbe Füllweise voraus.",
+        "Zwiebel roh ist nicht Zwiebelpulver, Reis trocken ist nicht Reis gekocht. Ohne passende Referenz muss eine eigene Umrechnung ergänzt werden. Bestehende Nährwerte und bereits protokollierte Einträge werden nicht neu berechnet. Reports, Foto, Textimport, geteilte Vorlagen und persönliche Ziele bleiben erhalten."
+      ]
     }
   ]
 }

@@ -2,6 +2,7 @@
 
 Das benutzerfreundliche Archiv beginnt auf Wunsch einmalig mit **v1.9.0**. Frühere technische UPDATE-Dateien bleiben unverändert, werden hier aber nicht nachgetragen. Neue Releases werden ab jetzt ergänzt.
 
+- [v1.11.0 – Cups und Stücke – mit Orientierung.](v1.11.0.md)
 - [v1.10.0 – Cups rein. Rezept fertig.](v1.10.0.md)
 - [v1.9.1 – Kein Update mehr verpassen.](v1.9.1.md)
 - [v1.9.0 – Ein Foto. Zwei Möglichkeiten.](v1.9.0.md)
