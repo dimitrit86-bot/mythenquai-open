@@ -1,0 +1,55 @@
+'use strict';
+const A=require('node:assert/strict'),C=require('../core.js'),R=require('../nutrition-recalc.js'),S=require('../sync-core.js');
+const K=['energy','protein','fat','carbs','vitC','vitB12'],clone=C.clone;
+const F={id:'custom-one',name:'Testprodukt',kind:'custom',basis:'g',density:0.8,n:{energy:100,protein:10,fat:5,carbs:20,vitC:null,vitB12:0},q:{}};
+const G={...clone(F),n:{energy:200,protein:20,fat:5,carbs:20,vitC:10,vitB12:null}};
+const fixed=(old=F,next=G,id='c1',owner='d')=>R.savedFood(old,next,owner,id,'2026-09-28T12:00:00Z');
+function foodEntry(food=F,quantity=150,unit='g',owner='d'){return {id:'entry1',name:food.name,date:'2026-09-25',meal:2,kind:'food',sourceId:food.id,amountText:quantity+' '+unit,amountSpec:{quantity,unit},n:C.snapshot(food,quantity,unit,null,K),...R.captured(food,quantity,unit,null,owner)};}
+const ingredient=(f=F,q=100)=>({food:clone(f),quantity:q,unit:'g',density:null});
+function recipeEntry(f=F,knownShare=true){const ingredients=[ingredient(f),ingredient({...clone(F),id:'other',n:{...F.n,energy:50}})];return {id:'recipe-entry',name:'Testgericht',date:'2026-09-26',meal:1,kind:'recipe',recipeId:'r1',recipeVersion:1,ingredients,n:C.scale(C.recipeTotal({ingredients},K),0.25),amountText:'0,5 Portion(en)',...(knownShare?{recipeShare:.25}:{})};}
+function state(){const s=C.initial();s.foods=[clone(F)];s.entries=[foodEntry()];s.days={'2026-09-25':{complete:true}};s.profile.manual={};return s;}
+let passed=0;function test(n,fn){fn();passed++;console.log('PASS',n);}
+const go=(s,foods=[fixed()],owner='d',recipes=[])=>R.recalculate(s,foods,owner,K,recipes);
+test('Correct calories in linked direct entry',()=>{const s=state();go(s);A.equal(s.entries[0].n.energy.value,300);});
+test('Other nutrients also corrected and unknowns preserved',()=>{const s=state();go(s);A.equal(s.entries[0].n.protein.value,30);A.equal(s.entries[0].n.vitC.value,15);A.equal(s.entries[0].n.vitB12.value,null);A.equal(s.entries[0].n.vitB12.known,0);});
+test('Date, amount, meal, ID and completed days unchanged',()=>{const s=state(),e=clone(s.entries[0]),p=clone(s.profile),days=clone(s.days);go(s);for(const k of ['id','date','meal','amountSpec','amountText'])A.deepEqual(s.entries[0][k],e[k]);A.deepEqual(s.days,days);A.deepEqual(s.profile,p);});
+test('Every date included not only today',()=>{const s=state();s.entries.push({...foodEntry(),id:'entry2',date:'2020-01-01'});A.equal(go(s).entries,2);});
+test('Unrelated same-name products untouched',()=>{const s=state();s.entries[0].sourceId='different';s.entries[0].nutritionLink.sourceId='different';const old=clone(s);go(s);A.deepEqual(s,old);});
+test('No public automatic changes without explicit correction marker',()=>{const s=state(),old=clone(s);go(s,[G]);A.deepEqual(s,old);});
+test('Repeat correction is idempotent',()=>{const s=state();go(s);const old=clone(s);A.equal(go(s).changed,false);A.deepEqual(s,old);});
+test('Second correction uses original quantity not corrected totals',()=>{const s=state();go(s);go(s,[fixed(G,{...clone(G),n:{...G.n,energy:300}},'c2')]);A.equal(s.entries[0].n.energy.value,450);});
+test('Real zero is known zero',()=>{const s=state();go(s,[fixed(F,{...clone(G),n:{...G.n,protein:0}})]);A.equal(s.entries[0].n.protein.value,0);A.equal(s.entries[0].n.protein.known,1);});
+test('Captured density freezes previous volume conversion',()=>{const s=state();s.entries=[foodEntry(F,100,'ml')];go(s,[fixed(F,{...G,density:2})]);A.equal(s.entries[0].n.energy.value,160);});
+test('Captured cup quantity independent of later cup weights',()=>{const f={...clone(F),cup:{grams:80,ml:240}},s=state();s.entries=[foodEntry(f,2,'cup240')];go(s,[fixed(f,{...G,cup:{grams:200,ml:240}})]);A.equal(s.entries[0].n.energy.value,320);});
+test('Captured pieces preserve historical piece weight',()=>{const f={...clone(F),portion:{label:'Riegel',size:30,unit:'g'}},s=state();s.entries=[foodEntry(f,2,'piece')];go(s,[fixed(f,{...G,portion:{label:'Riegel',size:50,unit:'g'}})]);A.equal(s.entries[0].n.energy.value,120);});
+test('Edited direct quantity keeps correct recalculation base',()=>{const s=state();Object.assign(s.entries[0],R.scaled(s.entries[0],.5));go(s);A.equal(s.entries[0].n.energy.value,150);});
+test('Grams to ml change is never silently converted',()=>{const s=state(),n=clone(s.entries[0].n);A.equal(go(s,[fixed(F,{...G,basis:'ml'})]).skipped.length,1);A.deepEqual(s.entries[0].n,n);A.equal(R.issues(s).length,1);});
+test('Invalid metadata cannot select another owner',()=>{const s=state(),old=clone(s);go(s,[fixed(F,G,'c1','p')]);A.deepEqual(s,old);});
+test('Recipe templates ingredient copies corrected',()=>{const s=state();s.recipes=[{id:'r1',name:'R',servings:2,finalWeight:200,version:1,ingredients:[ingredient()]}];go(s);A.equal(C.recipePortion(s.recipes[0],1,'portion',K).energy.value,100);A.equal(s.recipes[0].servings,2);A.equal(s.recipes[0].version,1);});
+test('Historical recipe keeps original ingredients and share',()=>{const s=state();s.entries=[recipeEntry()];s.recipes=[{id:'r1',name:'New recipe',servings:7,finalWeight:700,ingredients:[ingredient(F,999)]}];go(s);A.equal(s.entries[0].n.energy.value,62.5);A.equal(s.entries[0].ingredients[0].quantity,100);A.equal(s.entries[0].ingredients[1].food.n.energy,50);});
+test('Historical recipe partial nutrient totals recalculated safely',()=>{const s=state();s.entries=[recipeEntry()];go(s);A.equal(s.entries[0].n.vitC.value,2.5);A.equal(s.entries[0].n.vitC.known,1);A.equal(s.entries[0].n.vitC.total,2);});
+test('Legacy recipe share recovered from all consistent snapshots',()=>{const s=state();s.entries=[recipeEntry(F,false)];go(s);A.equal(s.entries[0].recipeShare,.25);A.equal(s.entries[0].n.energy.value,62.5);});
+test('Inconsistent legacy recipe snapshot flags review rather than guessing',()=>{const s=state();s.entries=[recipeEntry(F,false)];s.entries[0].n.protein.value=12;const old=clone(s.entries[0].n);A.equal(go(s).skipped.length,1);A.deepEqual(s.entries[0].n,old);A.equal(s.entries[0].ingredients[0].food.n.energy,100);});
+test('All-zero legacy recipe without share cannot be guessed',()=>{const s=state(),zero={...F,n:Object.fromEntries(K.map(k=>[k,0]))};s.entries=[recipeEntry(zero,false)];s.entries[0].ingredients=[ingredient(zero)];s.entries[0].n=C.recipeTotal({ingredients:s.entries[0].ingredients},K);A.equal(go(s,[fixed(zero,G)]).skipped.length,1);});
+test('All-zero recipe with stored share can be corrected',()=>{const s=state(),zero={...F,n:Object.fromEntries(K.map(k=>[k,0]))};s.entries=[recipeEntry(zero)];go(s,[fixed(zero,G)]);A.equal(s.entries[0].n.energy.value,62.5);});
+test('Recipe amount scaling preserves share',()=>{const e=recipeEntry();A.equal(R.scaled(e,2).recipeShare,.5);});
+test('Recipe serving fractions are explicit',()=>{A.equal(R.share({servings:4},2,'portion'),.5);A.equal(R.share({finalWeight:600},150,'g'),.25);A.equal(R.share({},.3,'batch'),.3);});
+test('Legacy direct g label works',()=>{const s=state();for(const k of ['nutritionBase','foodSnapshot','nutritionLink','amountSpec'])delete s.entries[0][k];go(s);A.equal(s.entries[0].n.energy.value,300);});
+test('Legacy direct kg and comma label works',()=>{A.deepEqual(R.legacyAmount('0,25 kg'),{quantity:.25,unit:'kg'});const s=state();s.entries[0]={...s.entries[0],nutritionBase:null,amountSpec:{quantity:.25,unit:'kg'}};go(s);A.equal(s.entries[0].n.energy.value,500);});
+test('Legacy nested scales parsed without eval',()=>A.deepEqual(R.legacyAmount('0,5 × (2 × (150 g))'),{quantity:150,unit:'g'}));
+test('Legacy piece text uses stored gram value not current average',()=>A.deepEqual(R.legacyAmount('2 Riegel (ca. 60 g) · geschätzt'),{quantity:60,unit:'g'}));
+test('Arbitrary text not interpreted as quantity',()=>A.equal(R.legacyAmount('Eine schöne Portion'),null));
+test('Source declarations not changed by recalculating',()=>{const f=fixed(),old=clone(f);go(state(),[f]);A.deepEqual(f,old);});
+test('Shared food correction uses exact owner and source',()=>{const s=state(),f={...fixed(F,G,'c1','p'),id:'shared-f-test',shared:{ownerId:'p',sourceId:F.id,ownerName:'Patricia'}};s.entries=[foodEntry({...F,id:f.id,shared:f.shared})];go(s,[f]);A.equal(s.entries[0].n.energy.value,300);});
+test('Legacy shared ID alias recognized',()=>{const s=state(),f={...fixed(F,G,'c1','p'),id:'shared-f-test',shared:{ownerId:'p',sourceId:F.id}};s.entries[0].sourceId=f.id;delete s.entries[0].nutritionLink;go(s,[f]);A.equal(s.entries[0].n.energy.value,300);});
+test('Different household owner same source ID never overwritten',()=>{const s=state();const f={...fixed(F,G,'c1','p'),id:'shared-f-test',shared:{ownerId:'p',sourceId:F.id}};const old=clone(s);go(s,[f]);A.deepEqual(s,old);});
+test('Explicit detached variant remains independent',()=>{const s=state();s.entries[0].nutritionLink.sourceId='variant';const old=clone(s);go(s);A.deepEqual(s,old);});
+test('Legacy shared recipe owner recovered from matching template',()=>{const s=state(),f={...fixed(F,G,'c1','p'),id:'shared-f-test',shared:{ownerId:'p',sourceId:F.id}};s.entries=[recipeEntry()];s.entries[0].recipeId='shared-r-test';go(s,[f],'d',[{id:'shared-r-test',shared:{ownerId:'p'}}]);A.equal(s.entries[0].n.energy.value,62.5);});
+test('Unknown deleted shared-recipe owner never assumed active owner',()=>{const s=state();s.entries=[recipeEntry()];s.entries[0].recipeId='shared-r-deleted';const old=clone(s);go(s);A.deepEqual(s,old);});
+test('New own variant does not inherit correction origin',()=>{const next={...fixed(),id:'custom-variant'};A.equal(R.savedFood(null,next,'d','c2','today').nutritionCorrection,undefined);});
+test('Re-saving an unchanged owned product repairs older snapshots',()=>{const s=state();const f=R.savedFood(G,G,'d','c2','today');go(s,[f]);A.equal(s.entries[0].n.energy.value,300);});
+test('State valid after correction and reload JSON roundtrip',()=>{const s=state();s.entries.push(recipeEntry());go(s);A.deepEqual(C.validateState(clone(s),K),s);});
+test('Skipped issue idempotent and corrected on fixed basis',()=>{const s=state();go(s,[fixed(F,{...G,basis:'ml'})]);A.equal(go(s,[fixed(F,{...G,basis:'ml'})]).changed,false);go(s);A.equal(R.issues(s).length,0);});
+test('Unrelated concurrent journal additions still merge',()=>{const b=state(),l=clone(b),r=clone(b);go(l);r.entries.push({...foodEntry(),id:'remote-new'});const m=S.merge(b,l,r);A.equal(m.conflicts.length,0);A.equal(m.state.entries.length,2);});
+test('Conflicting simultaneous quantity edit not silently overwritten',()=>{const b=state(),l=clone(b),r=clone(b);go(l);r.entries[0].n=C.scale(r.entries[0].n,2);const m=S.merge(b,l,r);A.ok(m.conflicts.length>0);});
+console.log('TOTAL RECALC TESTS',passed);

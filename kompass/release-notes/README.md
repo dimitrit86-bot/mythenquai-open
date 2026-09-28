@@ -2,6 +2,7 @@
 
 Das benutzerfreundliche Archiv beginnt auf Wunsch einmalig mit **v1.9.0**. Frühere technische UPDATE-Dateien bleiben unverändert, werden hier aber nicht nachgetragen. Neue Releases werden ab jetzt ergänzt.
 
+- [v1.13.0 – Einmal korrigieren. Überall richtig rechnen.](v1.13.0.md)
 - [v1.12.0 – Einmal neu. Gestern im Blick.](v1.12.0.md)
 - [v1.11.0 – Cups und Stücke – mit Orientierung.](v1.11.0.md)
 - [v1.10.0 – Cups rein. Rezept fertig.](v1.10.0.md)

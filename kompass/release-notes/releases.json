@@ -144,6 +144,36 @@
         "Bei «Ja» und «Nein» wird die Antwort im aktiven Personenprofil gespeichert. Offline gilt der lokal gesicherte Stand; auf einem noch nicht synchronisierten anderen Gerät kann der Hinweis erneut erscheinen.",
         "Cups, Dichteschätzwerte, Gemüse-Stückportionen, Rezept-Textimport, Fotoerkennung und PDF-Reports bleiben unverändert verfügbar."
       ]
+    },
+    {
+      "version": "1.13.0",
+      "date": "2026-09-28",
+      "title": "Einmal korrigieren. Überall richtig rechnen.",
+      "summary": "Korrigierte Angaben eigener Produkte werden auch in verknüpften Gerichten und Tagebucheinträgen berücksichtigt.",
+      "changes": [
+        {
+          "title": "Produktwerte korrigieren statt erneut erfassen",
+          "text": "Bearbeitest und speicherst du ein bereits eigenes Produkt, werden verknüpfte Zutaten und Tagebucheinträge mit den neuen Nährwerten berechnet – auch frühere Tage. Das gilt für Kalorien, Makronährstoffe, Vitamine und Mineralstoffe."
+        },
+        {
+          "title": "Deine Mengen bleiben deine Mengen",
+          "text": "Gegessene Gramm, Milliliter, Stück- und Cup-Gewichte bleiben erhalten. Ein früheres Gericht behält seine damaligen Zutaten und seinen erfassten Anteil. Neu berechnet werden die Nährwerte, nicht die Verzehrmengen."
+        },
+        {
+          "title": "Gemeinsam nutzen, getrennt korrigieren",
+          "text": "Nach dem Synchronisieren übernimmt das andere Profil die Produktkorrektur beim nächsten sicheren Laden des Haushaltskatalogs in seine verknüpften Einträge. Eigene Varianten mit eigener Kennung bleiben unabhängig. Während offener Eingaben wartet die Aktualisierung."
+        },
+        {
+          "title": "Tagesbilanz und Reports ziehen mit",
+          "text": "Nach der Neuberechnung verwenden Tagesübersicht, Verlauf und neu erstellte Reports/PDFs die korrigierten Werte. Der Speichervorgang nennt die Anzahl neu berechneter Einträge und Gerichte."
+        }
+      ],
+      "notes": [
+        "Unklare Alteinträge und ein Wechsel der Bezugsbasis zwischen 100 g und 100 ml werden zur Prüfung markiert; die bisherigen Zahlen werden dann nicht stillschweigend ersetzt. Passende Menge neu erfassen.",
+        "Eine neue Produktrezeptur als eigenes neues Produkt anlegen. Die Korrekturfunktion meint falsche ursprüngliche Angaben; sie ersetzt nicht rückwirkend eine früher tatsächlich verwendete Sorte oder ein damals anders gekochtes Gericht.",
+        "Nur ausdrücklich gespeicherte eigene Produktkorrekturen lösen eine Aktualisierung aus. Öffentliche Katalog-Updates und gleich klingende Produktnamen tun das nicht. Bereits heruntergeladene PDFs bleiben unverändert; einen aktuellen PDF-Report erneut exportieren.",
+        "Cups, geschätzte Stückgrössen, kompletter Rezeptimport, Fotoerkennung, einmalige Neuerungen und Vortagsfrage bleiben erhalten. Der bisherige App-Link bleibt gültig."
+      ]
     }
   ]
 }
