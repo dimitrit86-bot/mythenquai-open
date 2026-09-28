@@ -1,0 +1,50 @@
+name: Verify once-only updates and yesterday review
+on:
+  push:
+    branches: [kompass-daily-review-v112]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Integrate on current base and generate release notes
+        run: |
+          python3 tools/apply_daily_review.py
+          if test -f tools/daily_review_followup.py; then python3 tools/daily_review_followup.py; fi
+          python3 kompass/release-notes/build.py
+      - name: Syntax, archive and all calculation tests
+        run: |
+          python3 kompass/release-notes/build.py --check
+          for f in kompass/*.js; do node --check "$f"; done
+          for f in kompass/tests/*.test.js; do node "$f"; done
+      - name: Install browser engines
+        run: |
+          python3 -m pip install playwright
+          python3 -m playwright install --with-deps chromium webkit
+      - name: Chromium synthetic household flows
+        env:
+          TEST_BROWSER: chromium
+        run: python3 tools/test_daily_review.py
+      - name: WebKit synthetic household flows
+        env:
+          TEST_BROWSER: webkit
+        run: python3 tools/test_daily_review.py
+      - name: Preserve tested source on review branch only
+        run: |
+          git config user.name 'Kompass verifier'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add kompass/ tools/test_daily_review.py
+          git diff --cached --quiet || git commit -m 'Verify once-only releases and explicit yesterday completeness [skip ci]'
+          git push origin HEAD:kompass-daily-review-v112
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kompass-daily-review-tests
+          path: |
+            kompass/
+            test-output-daily/
+            tools/test_daily_review.py
+          retention-days: 7
