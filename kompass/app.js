@@ -33,6 +33,25 @@ async function acknowledgeReleases(version,expectedId){
  if(mutationBusy)throw Error('Bitte warten, bis der laufende Speichervorgang abgeschlossen ist.');
  mutationBusy=true;try{await change(s=>{if(H.id!==expectedId)throw Error('Profilwechsel: Lesestand nicht gespeichert.');s.profile.releaseNotesSeen=R.highest(s.profile.releaseNotesSeen,version);});document.dispatchEvent(new Event('nk-release-acknowledged'));}finally{mutationBusy=false;}
 }
+async function respondDayReview(day,complete,expectedId,entrySignature){
+ const H=window.NK_HOUSEHOLD,R=window.NK_DAY_REVIEW_CORE;
+ if(!H?.authenticated||H.id!==expectedId)throw Error('Das Profil wurde gewechselt. Bitte erneut öffnen.');
+ if(typeof complete!=='boolean'||!C.validDate(day)||day!==R.previousDay(C.dateKey()))throw Error('Der Kalendertag hat gewechselt. Bitte die neue Tagesübersicht öffnen.');
+ if(mutationBusy)throw Error('Bitte den laufenden Speichervorgang abwarten.');
+ mutationBusy=true;
+ try{await change(s=>{
+  if(H.id!==expectedId)throw Error('Profilwechsel: Es wurde kein Häkchen gesetzt.');
+  if(day!==R.previousDay(C.dateKey()))throw Error('Der Kalendertag hat gewechselt. Bitte erneut prüfen.');
+  if(!C.dayEntries(s,day).length)throw Error('Für diesen Tag sind keine Einträge mehr vorhanden.');
+  if(R.signature(s,day,window.NK_SYNC.stable)!==entrySignature)throw Error('Die Einträge wurden zwischenzeitlich geändert. Bitte nochmals prüfen.');
+  if(complete)s.days[day]={...s.days[day],complete:true};
+  s.profile.dayReviewThrough=R.highest(s.profile.dayReviewThrough,day);
+ });
+ render();document.dispatchEvent(new Event('nk-day-reviewed'));
+ if(complete)notify('Vortag als vollständig protokolliert markiert.');
+ }finally{mutationBusy=false;}
+}
+function openDay(day){if(!C.validDate(day))throw Error('Ungültiges Datum.');if(window.NK_APP.hasDraft||window.NK_DEVICE?.hasUnsavedForm())throw Error('Bitte offene Eingaben zuerst speichern.');date=day;nav('today');}
 function notify(text,allowUndo=false){const t=$('#toast');t.innerHTML=`<span>${esc(text)}</span>${allowUndo?'<button data-action="undo">Rückgängig</button>':''}`;t.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('visible'),allowUndo?12000:4800);}
 async function removeWithUndo(fn,text){const old=copy(state);await change(fn);undo=old;render();notify(text,true);}
 function nav(to){if(route==='editor'&&dirty&&to!=='editor'&&!confirm('Ungespeicherte Änderungen am Gericht verwerfen?'))return;route=to;render();window.scrollTo({top:0,behavior:'instant'});}
@@ -202,7 +221,7 @@ document.addEventListener('change',async e=>{const el=e.target;try{
  else if(el.closest('#custom-food-form')){updateCustomPortionPreview();}
  else if(el.closest('#profile-form')){updateGoalPreview();}
  else if(el.id==='diary-date'){if(C.validDate(el.value)){date=el.value;render();}}
- else if(el.id==='day-complete'){await change(s=>s.days[date]={complete:el.checked});}
+ else if(el.id==='day-complete'){const day=date,complete=el.checked;await change(s=>s.days[day]={...s.days[day],complete});}
  else if(el.id==='complete-only'){completeOnly=el.checked;render();}
  else if(el.id==='food-cup-kind')chooseMeasure('cup');
  else if(el.id==='food-piece-kind')chooseMeasure('piece');
@@ -232,5 +251,5 @@ window.addEventListener('storage',e=>{if(e.key===KEY){storageProblem='Daten wurd
 if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(()=>{});
 render();
 // Deliberately expose only calculation metadata for automated local UI smoke tests.
-window.NK_APP={acceptRecipeImport,acknowledgeReleases,version:C.VERSION,foodCount:D.foods.length,reviewFood:f=>customFoodDialog(f),openFood:f=>foodDialog(f),refresh:render,get hasDraft(){return dirty||mutationBusy||!!window.NK_RECIPE_IMPORT?.hasDraft;},acceptSyncState:s=>{state=C.validateState(s,KEYS);storageProblem='';storageBlocked=false;undo=null;if(!dirty&&!modal&&!mutationBusy&&route!=='profile')render();},refreshCatalog:()=>{if(route==='search'&&!modal)renderSearchResults();if(route==='recipes')render();if(modal?.type==='ingredient-search')renderIngredientResults();},canSwitch:()=>{if(mutationBusy){notify('Bitte warten, bis der Speichervorgang abgeschlossen ist.');return false;}return !(dirty||window.NK_RECIPE_IMPORT?.hasDraft||window.NK_DEVICE?.hasUnsavedForm())||confirm('Ungespeicherte Eingaben verwerfen und Profil wechseln?');},loadState:s=>{reportOptions=null;state=C.validateState(s,KEYS);storageBlocked=false;storageProblem='';dirty=false;draft=null;undo=null;route='today';closeDialog();render();},clearState:()=>{reportOptions=null;state=C.initial();dirty=false;draft=null;undo=null;modal=null;document.querySelector('#app').innerHTML='';},getState:()=>copy(state)};
+window.NK_APP={respondDayReview,openDay,acceptRecipeImport,acknowledgeReleases,version:C.VERSION,foodCount:D.foods.length,reviewFood:f=>customFoodDialog(f),openFood:f=>foodDialog(f),refresh:render,get hasDraft(){return dirty||mutationBusy||!!window.NK_RECIPE_IMPORT?.hasDraft;},acceptSyncState:s=>{state=C.validateState(s,KEYS);storageProblem='';storageBlocked=false;undo=null;if(!dirty&&!modal&&!mutationBusy&&route!=='profile')render();},refreshCatalog:()=>{if(route==='search'&&!modal)renderSearchResults();if(route==='recipes')render();if(modal?.type==='ingredient-search')renderIngredientResults();},canSwitch:()=>{if(mutationBusy){notify('Bitte warten, bis der Speichervorgang abgeschlossen ist.');return false;}return !(dirty||window.NK_RECIPE_IMPORT?.hasDraft||window.NK_DEVICE?.hasUnsavedForm())||confirm('Ungespeicherte Eingaben verwerfen und Profil wechseln?');},loadState:s=>{reportOptions=null;state=C.validateState(s,KEYS);storageBlocked=false;storageProblem='';dirty=false;draft=null;undo=null;route='today';closeDialog();render();},clearState:()=>{reportOptions=null;state=C.initial();dirty=false;draft=null;undo=null;modal=null;document.querySelector('#app').innerHTML='';},getState:()=>copy(state)};
 })();

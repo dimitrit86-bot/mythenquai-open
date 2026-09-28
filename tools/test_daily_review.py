@@ -32,9 +32,9 @@ def api(route):
  else:raise AssertionError(str(d))
  return route.fulfill(status=200,json=r)
 CLOCK="""(()=>{const RealDate=Date,base=RealDate.now(),start=RealDate.parse('2026-09-28T10:00:00+02:00');window.__dayOffset=0;window.Date=class extends RealDate{constructor(...args){super(...(args.length?args:[start+(RealDate.now()-base)+window.__dayOffset]));}static now(){return start+(RealDate.now()-base)+window.__dayOffset;}};})();"""
-def context(b,sw=False):
+def context(b,sw=False,offset=0):
  c=b.new_context(viewport={'width':390,'height':844},timezone_id='Europe/Zurich',service_workers='allow' if sw else 'block',accept_downloads=True)
- c.add_init_script(CLOCK)
+ c.add_init_script(CLOCK.replace("window.__dayOffset=0", "window.__dayOffset="+str(offset)))
  def route(r):
   if '/functions/v1/' in r.request.url:return api(r)
   if r.request.url.startswith(URL):return r.continue_()
@@ -60,6 +60,7 @@ with sync_playwright() as play:
   login(p);p.locator('#release-notes-dialog[open]').wait_for()
   check('Only new release shown, not old archived versions',p.locator('#release-notes-dialog [data-release-version]').evaluate_all('(xs)=>xs.map(e=>e.dataset.releaseVersion)')==['1.12.0'])
   p.wait_for_function('NK_APP.getState().profile.releaseNotesSeen==="1.12.0"');flush(p)
+  p.screenshot(path=str(OUT/f'{engine}-release-once.png'))
   check('Release saved as shown without any click',profiles['test-d']['state']['profile']['releaseNotesSeen']=='1.12.0')
   check('Dialog does not vanish after automatic saving',p.locator('#release-notes-dialog').is_visible())
   check('Yesterday prompt waits behind release notes',no(p,'day-review-dialog'))
@@ -101,14 +102,19 @@ with sync_playwright() as play:
   reset_person('test-d');c=context(b);p=c.new_page();login(p);p.locator('#day-review-dialog[open]').wait_for()
   p.evaluate('()=>{window.__dayOffset=86400000;NK_DAY_REVIEW.refresh();}');p.wait_for_function('document.querySelector("#day-review-description").textContent.includes("28. September")');check('Midnight refresh asks the new previous calendar day',not p.evaluate('NK_APP.getState().days["2026-09-27"].complete'))
   p.locator('[data-day-review="yes"]').click();p.wait_for_function('!document.querySelector("#day-review-dialog").open');flush(p);check('After midnight only the displayed new yesterday is completed',profiles['test-d']['state']['days']['2026-09-28']['complete'] and not profiles['test-d']['state']['days']['2026-09-27']['complete']);c.close()
-  reset_person('test-d',False);c=context(b);p=c.new_page();login(p);nav(p,'search');p.locator('[data-nk-scan]:visible').first.click()
-  p.evaluate('s=>{NK_APP.acceptSyncState(s);NK_DAY_REVIEW.refresh();}',copy.deepcopy(initial)|{'profile':{**initial['profile'],'releaseNotesSeen':'1.12.0'}})
+  reset_person('test-d');c=context(b,offset=-172800000);p=c.new_page();login(p);nav(p,'search');p.locator('[data-nk-scan]:visible').first.click()
+  p.evaluate('()=>{window.__dayOffset=0;NK_DAY_REVIEW.refresh();}')
   check('Prompt never covers an open scanner',no(p,'day-review-dialog'));p.locator('#scan-close').click();p.locator('#day-review-dialog[open]').wait_for();check('Prompt follows scanner close');c.close()
-  reset_person('test-d',False);c=context(b);p=c.new_page();login(p);nav(p,'profile');p.locator('#age').fill('41')
-  p.evaluate('s=>{NK_APP.acceptSyncState(s);NK_DAY_REVIEW.refresh();}',copy.deepcopy(initial)|{'profile':{**initial['profile'],'releaseNotesSeen':'1.12.0'}})
+  reset_person('test-d');c=context(b,offset=-172800000);p=c.new_page();login(p);nav(p,'profile');p.locator('#age').fill('41')
+  p.evaluate('()=>{window.__dayOffset=0;NK_DAY_REVIEW.refresh();}')
   check('Unsaved profile inputs are not interrupted',no(p,'day-review-dialog'));p.locator('#profile-form button[type=submit]').click();p.locator('#day-review-dialog[open]').wait_for();check('Prompt follows profile save');c.close()
   reset_person('test-d',False);profiles['test-d']['state']['profile']['releaseNotesSeen']='1.11.0'
   c=context(b);p=c.new_page();login(p);p.locator('#release-notes-dialog[open]').wait_for();p.locator('[data-release-action="close"]').first.click();p.reload();p.wait_for_function('window.NK_APP');check('Immediate dismissal survives a page reload',no(p,'release-notes-dialog'))
+  c.close();reset_person('test-d');c=context(b);p=c.new_page();login(p);p.locator('#day-review-dialog[open]').wait_for()
+  server_down=True;p.locator('[data-day-review="yes"]').click();p.wait_for_function('!document.querySelector("#day-review-dialog").open');p.wait_for_timeout(500)
+  check('With server unavailable the explicit yes stays encrypted locally',p.evaluate('NK_APP.getState().days["2026-09-27"].complete && NK_HOUSEHOLD.pending') and not profiles['test-d']['state']['days']['2026-09-27']['complete'])
+  p.reload();p.wait_for_function('window.NK_APP');check('Locally secured completion survives reload without repeated prompt',no(p,'day-review-dialog') and p.evaluate('NK_APP.getState().days["2026-09-27"].complete'))
+  server_down=False;flush(p);check('Pending confirmation synchronizes when server returns',profiles['test-d']['state']['days']['2026-09-27']['complete'])
   check('Cups, estimated household measures and recipe paste remain loaded',p.evaluate('!!NK_CUPS && !!NK_MEASURES && !!NK_RECIPE_IMPORT'))
   check('Reports and PDF remain loaded',p.evaluate('!!NK_REPORTS && !!NK_REPORT_PDF'))
   check('No unexpected external requests',not unexpected);check('No JavaScript runtime errors',not errors)

@@ -115,6 +115,35 @@
         "Grundlage sind ausgewählte Haushaltsmasse aus USDA FoodData Central SR Legacy (2018) und ein Haferflockenwert aus der King-Arthur-Backtabelle. Das sind keine gemessenen Schweizer Durchschnittsgrössen. Für die Übertragung der Cup-Gewichte dient 240 ml als ausdrücklich näherungsweise Küchenkonvention; andere Cup-Grössen setzen dieselbe Füllweise voraus.",
         "Zwiebel roh ist nicht Zwiebelpulver, Reis trocken ist nicht Reis gekocht. Ohne passende Referenz muss eine eigene Umrechnung ergänzt werden. Bestehende Nährwerte und bereits protokollierte Einträge werden nicht neu berechnet. Reports, Foto, Textimport, geteilte Vorlagen und persönliche Ziele bleiben erhalten."
       ]
+    },
+    {
+      "version": "1.12.0",
+      "date": "2026-09-28",
+      "title": "Einmal neu. Gestern im Blick.",
+      "summary": "Weniger Wiederholungen und ein kurzer Check, damit vollständig erfasste Tage nicht offen bleiben.",
+      "changes": [
+        {
+          "title": "Neuerungen automatisch nur einmal",
+          "text": "Die App merkt bereits beim Anzeigen, welche Updates dein Profil gesehen hat. Schliessen, Escape oder «Weiter zur App» führt beim nächsten Start nicht zur Wiederholung. Nach der Synchronisierung gilt der Stand auch auf deinen anderen Geräten. Im Release-Archiv kannst du weiterhin alles nachlesen."
+        },
+        {
+          "title": "Hast du gestern alles protokolliert?",
+          "text": "Wenn für den Vortag Einträge vorhanden sind, aber das Häkchen fehlt, fragt die App nach. «Ja, alles erfasst» setzt «Tag vollständig protokolliert» direkt für diesen Vortag. Du musst nicht mehr selbst zurückblättern."
+        },
+        {
+          "title": "Noch etwas nachtragen?",
+          "text": "«Nein, Vortag öffnen» öffnet den betreffenden Tag ohne Häkchen und merkt die Antwort für dieses Profil. «Später» oder Schliessen lässt alles unverändert und verschiebt die Nachfrage bis zum nächsten App-Start."
+        },
+        {
+          "title": "Deine Eingaben haben Vorrang",
+          "text": "Die Hinweise warten bei offenen Eingaben, Scannern und Dialogen. Bereits vollständige Tage und Vortage ohne Einträge werden nicht abgefragt. Ein Bestätigen ändert keine gegessenen Mengen oder Nährwerte."
+        }
+      ],
+      "notes": [
+        "Die Nachfrage bezieht sich auf den Vortag laut lokalem Kalender des Geräts. Ein fehlendes Vollständigkeits-Häkchen sagt nichts darüber aus, ob Nährstoffziele erreicht wurden.",
+        "Bei «Ja» und «Nein» wird die Antwort im aktiven Personenprofil gespeichert. Offline gilt der lokal gesicherte Stand; auf einem noch nicht synchronisierten anderen Gerät kann der Hinweis erneut erscheinen.",
+        "Cups, Dichteschätzwerte, Gemüse-Stückportionen, Rezept-Textimport, Fotoerkennung und PDF-Reports bleiben unverändert verfügbar."
+      ]
     }
   ]
 }
