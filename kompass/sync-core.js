@@ -32,10 +32,13 @@
   for(const key of ['entries','recipes','foods'])out[key]=records(key);
   const lp={...local.profile},rp={...remote.profile},bp=base?{...base.profile}:null;
   const readVersion=RELEASES.highest(bp?.releaseNotesSeen,lp.releaseNotesSeen,rp.releaseNotesSeen);
+  const dayReviewThrough=[bp?.dayReviewThrough,lp.dayReviewThrough,rp.dayReviewThrough].filter(v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v)).sort().at(-1);
+  delete lp.dayReviewThrough;delete rp.dayReviewThrough;if(bp)delete bp.dayReviewThrough;
   delete lp.releaseNotesSeen;delete rp.releaseNotesSeen;if(bp)delete bp.releaseNotesSeen;
   delete lp.manual;delete rp.manual;if(bp)delete bp.manual;
   out.profile=object(bp,lp,rp,'profile');out.profile.manual=object(base?.profile?.manual,local.profile.manual,remote.profile.manual,'profile.manual');
   if(readVersion)out.profile.releaseNotesSeen=readVersion;
+  if(dayReviewThrough)out.profile.dayReviewThrough=dayReviewThrough;
   out.days=object(base?.days,local.days,remote.days,'days');
   const bFav=new Set(base?.favorites||[]),lFav=new Set(local.favorites),rFav=new Set(remote.favorites);
   out.favorites=[...new Set([...lFav,...rFav])].filter(id=>legacy||!bFav.has(id)||lFav.has(id)&&rFav.has(id));

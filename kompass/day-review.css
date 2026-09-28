@@ -1,0 +1,12 @@
+/* Calm, touch-friendly prompt; no external images or tracking. */
+#day-review-dialog{box-sizing:border-box;width:min(520px,calc(100vw - 24px));max-width:calc(100vw - 24px);max-height:90dvh;overflow:auto;border:1px solid #cdded3;border-radius:22px;padding:25px;background:#f7faf7;color:#244434;box-shadow:0 24px 80px #13352940}
+#day-review-dialog::backdrop{background:#122e2866;backdrop-filter:blur(3px)}
+.day-review-head{display:flex;justify-content:space-between;align-items:center;gap:10px}.day-review-head .eyebrow{font-size:10px;letter-spacing:.1em;margin:0}.day-review-head .icon-btn{flex-shrink:0;min-width:44px;min-height:44px;font-size:26px}
+.day-review-symbol{width:50px;height:50px;border-radius:16px;background:#e4efe6;font-size:31px;line-height:50px;text-align:center;margin:10px 0 16px;color:#296843}.day-review-for{font-size:12px;color:#637968;margin:0 0 7px}
+#day-review-title{font-size:clamp(25px,5vw,31px);line-height:1.16;margin:0 0 15px;letter-spacing:-.035em;overflow-wrap:anywhere}#day-review-title:focus{outline:none}
+#day-review-description{font-size:16px;line-height:1.65;margin:0 0 15px}.day-review-info{padding:12px;border-radius:12px;background:#edf3ec;font-size:13px;line-height:1.65}.day-review-note{font-size:12px;color:#637968;line-height:1.7}
+.day-review-actions{display:grid;gap:9px;margin-top:20px}.day-review-actions button{min-height:48px;white-space:normal;line-height:1.5}.day-review-actions button:disabled{opacity:.6}.day-review-actions .muted-link{justify-self:center;padding:10px}
+#day-review-error{font-size:12px;line-height:1.6;overflow-wrap:anywhere}#day-review-dialog button:focus-visible{outline:2px solid #66866e;outline-offset:3px}
+@media(max-width:380px){#day-review-dialog{padding:19px}.day-review-head .eyebrow{max-width:175px}}
+
+#day-review-error:empty{display:none}
